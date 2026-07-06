@@ -8,21 +8,16 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record ExpenseRequest(
-    @NotNull(message = "El monto es obligatorio")
-    @Positive(message = "El monto debe ser mayor a cero")
-    BigDecimal amount,
-    @NotNull(message = "La categoria es obligatoria")
-    Category category,
-    String description, // Opcional por defecto al no tener @NotNull ni @NotBlank
-    @NotNull(message = "La fecha del gasto es obligatoria")
-    LocalDate expenseDate
-) {
+        @NotNull(message = "El monto es obligatorio") @Positive(message = "El monto debe ser mayor a cero") BigDecimal amount,
+        @NotNull(message = "La categoria es obligatoria") Category category,
+        String description, // Opcional por defecto al no tener @NotNull ni @NotBlank
+        @NotNull(message = "La fecha del gasto es obligatoria") LocalDate expenseDate) {
     public Expense toEntity() {
         Expense expense = new Expense();
         expense.setAmount(this.amount());
         expense.setCategory(this.category());
-        // Si llega null o vacío, puedes normalizarlo a null o dejarlo como venga
-        expense.setDescription(this.description()); 
+        expense.setDescription(this.description());
+        expense.setExpenseDate(this.expenseDate());
         return expense;
     }
 }

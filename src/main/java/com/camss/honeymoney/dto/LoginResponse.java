@@ -2,7 +2,11 @@ package com.camss.honeymoney.dto;
 
 public record LoginResponse(
     String token,
-    Long id,
-    String name,
-    String email
-) {}
+    UserSummary user
+) {
+    public record UserSummary(
+        Long id,
+        String name,
+        String email
+    ) {}
+}

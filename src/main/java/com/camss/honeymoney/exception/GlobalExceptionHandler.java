@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,8 +31,18 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidFilterException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicatedEmail(InvalidFilterException ex, WebRequest request) {
-        return build(HttpStatus.CONFLICT, ex.getMessage(), request);
+    public ResponseEntity<ErrorResponse> handleInvalidFilter(InvalidFilterException ex, WebRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({ BadCredentialsException.class, AuthenticationException.class })
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(Exception ex, WebRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, "Credenciales inválidas", request);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException ex, WebRequest request) {
+        return build(HttpStatus.BAD_REQUEST, "Cuerpo de la petición inválido o mal formado", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

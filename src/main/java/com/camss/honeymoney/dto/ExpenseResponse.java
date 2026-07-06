@@ -12,7 +12,7 @@ public record ExpenseResponse(
     BigDecimal amount,
     Category category,
     String description,
-    LocalDate expensDate,
+    LocalDate expenseDate,
     Instant createdAt,
     Instant updatedAt
 ) {
