@@ -29,17 +29,25 @@ public class Expense {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Category category;
+
     private String description;
+
+    @Column(nullable = false)
     private LocalDate expenseDate;
+
+    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP")
     private Instant createdAt;
+
+    @Column(nullable = false, columnDefinition = "TIMESTAMP")
     private Instant updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

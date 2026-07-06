@@ -2,10 +2,8 @@ package com.camss.honeymoney.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
 import com.camss.honeymoney.model.Category;
 import com.camss.honeymoney.model.Expense;
-
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -15,7 +13,7 @@ public record ExpenseRequest(
     BigDecimal amount,
     @NotNull(message = "La categoria es obligatoria")
     Category category,
-    String description,
+    String description, // Opcional por defecto al no tener @NotNull ni @NotBlank
     @NotNull(message = "La fecha del gasto es obligatoria")
     LocalDate expenseDate
 ) {
@@ -23,8 +21,8 @@ public record ExpenseRequest(
         Expense expense = new Expense();
         expense.setAmount(this.amount());
         expense.setCategory(this.category());
-        expense.setDescription(this.description());
-        expense.setExpenseDate(this.expenseDate());
+        // Si llega null o vacío, puedes normalizarlo a null o dejarlo como venga
+        expense.setDescription(this.description()); 
         return expense;
     }
 }
