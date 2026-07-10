@@ -1,6 +1,7 @@
 package com.camss.honeymoney.service;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import com.camss.honeymoney.dto.ExpenseListResponse;
 import com.camss.honeymoney.dto.ExpenseRequest;
 import com.camss.honeymoney.dto.ExpenseResponse;
 import com.camss.honeymoney.dto.ExpenseUpdateRequest;
+import com.camss.honeymoney.exception.InvalidFilterException;
 import com.camss.honeymoney.exception.ResourceNotFoundException;
 import com.camss.honeymoney.model.Expense;
 import com.camss.honeymoney.model.User;
@@ -76,7 +78,7 @@ public class ExpenseService {
         List<Expense> expenses = expenseRepository.findByUserEmail(userEmail);
         List<ExpenseResponse> data = expenses.stream().map(ExpenseResponse::new).toList();
 
-        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(data.size(), Map.of("userEmail", userEmail));
+        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(data.size(), Map.of());
 
         return new ExpenseListResponse(data, meta);
     }
@@ -85,5 +87,36 @@ public class ExpenseService {
     public void delete(Long id, String userEmail){
         Expense expense = expenseRepository.findByIdAndUserEmail(id, userEmail).orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado o no autorizado"));
         expenseRepository.delete(expense);
+    }
+
+    @Transactional(readOnly=true)
+    public ExpenseListResponse filterExpenses(String userEmail, String range, LocalDate startDate, LocalDate endDate){
+        LocalDate finalStart = startDate;
+        LocalDate finalEnd = endDate;
+
+        if (range != null && !range.isBlank()){
+            finalEnd = LocalDate.now();
+            finalStart = switch (range) {
+                case "last_week" -> finalEnd.minusWeeks(1);
+                case "last_month" -> finalEnd.minusMonths(1);
+                case "last_3_months" -> finalEnd.minusMonths(3);
+                default -> throw new InvalidFilterException("Rango no válido: " + range);
+            };
+        }
+
+        else if (finalStart == null || finalEnd == null) {
+            throw new InvalidFilterException("Debe proporcionar un rango válido o ambas fechas (inicio y fin).");
+        }
+
+        if (finalStart.isAfter(finalEnd)) {
+            throw new InvalidFilterException("La fecha de inicio no puede ser posterior a la fecha fin.");
+        }
+
+        List<Expense> expenses = expenseRepository.findByUserEmailAndExpenseDateBetween(userEmail, finalStart, finalEnd);
+        List<ExpenseResponse> data = expenses.stream().map(ExpenseResponse::new).toList();
+
+        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(expenses.size(), Map.of("range", range != null ? range : "custom", "startDate", finalStart, "endDate", finalEnd));
+
+        return new ExpenseListResponse(data, meta);
     }
 }
