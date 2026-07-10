@@ -91,10 +91,19 @@ public class ExpenseService {
 
     @Transactional(readOnly=true)
     public ExpenseListResponse filterExpenses(String userEmail, String range, LocalDate startDate, LocalDate endDate){
+        boolean hasRange = range != null && !range.isBlank();
+        boolean hasCustomDates = startDate != null || endDate != null;
+
+        // Regla de exclusión mutua: no se puede combinar "range" con startDate/endDate
+        if (hasRange && hasCustomDates) {
+            throw new InvalidFilterException(
+                "Los parámetros 'range' y 'startDate'/'endDate' son mutuamente excluyentes. Use solo uno de los dos.");
+        }
+
         LocalDate finalStart = startDate;
         LocalDate finalEnd = endDate;
 
-        if (range != null && !range.isBlank()){
+        if (hasRange){
             finalEnd = LocalDate.now();
             finalStart = switch (range) {
                 case "last_week" -> finalEnd.minusWeeks(1);
