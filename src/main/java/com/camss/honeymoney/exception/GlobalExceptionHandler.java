@@ -62,7 +62,6 @@ public class GlobalExceptionHandler {
     // Captura parámetros de query mal formateados (ej: startDate=2026/07/04 en vez de 2026-07-04)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, WebRequest request) {
-        String expectedType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "valor esperado";
         String message = String.format(
                 "El parámetro '%s' tiene un formato inválido (se recibió '%s'). Formato esperado: AAAA-MM-DD.",
                 ex.getName(), ex.getValue());
