@@ -114,9 +114,9 @@ class AuthServiceTest {
         // Assert
         assertNotNull(response);
         assertEquals(mockToken, response.token());
-        assertEquals(userMock.getId(), response.id());
-        assertEquals(userMock.getName(), response.name());
-        assertEquals(userMock.getEmail(), response.email());
+        assertEquals(userMock.getId(), response.user().id());
+        assertEquals(userMock.getName(), response.user().name());
+        assertEquals(userMock.getEmail(), response.user().email());
 
         verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(userRepository, times(1)).findByEmail(loginRequest.email());
