@@ -23,6 +23,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import com.camss.honeymoney.dto.ExpenseListResponse;
@@ -51,6 +54,7 @@ public class ExpenseServiceTest {
 
     private User sampleUser;
     private Expense sampleExpense;
+    private Pageable pageable;
     private final String email = "test@example.com";
     private final Long expenseId = 1L;
 
@@ -65,6 +69,8 @@ public class ExpenseServiceTest {
         sampleExpense.setCategory(Category.Groceries);
         sampleExpense.setDescription("Lunch");
         sampleExpense.setUser(sampleUser);
+
+        pageable = PageRequest.of(0, 10);
     }
 
     @Test
@@ -130,12 +136,15 @@ public class ExpenseServiceTest {
 
     @Test
     void findAll_ShouldReturnExpenseListResponse() {
-        when(expenseRepository.findByUserEmail(email)).thenReturn(List.of(sampleExpense));
+        when(expenseRepository.findByUserEmail(email, pageable))
+                .thenReturn(new PageImpl<>(List.of(sampleExpense), pageable, 1));
 
-        ExpenseListResponse response = expenseService.findAll(email);
+        ExpenseListResponse response = expenseService.findAll(email, pageable);
 
         assertNotNull(response);
-        assertNotNull(response.data());
+        assertEquals(1, response.meta().totalCount());
+        assertEquals(1, response.data().size());
+        verify(expenseRepository, times(1)).findByUserEmail(email, pageable);
     }
 
     @Test
@@ -161,63 +170,65 @@ public class ExpenseServiceTest {
     @Test
     void filterExpenses_WhenRangeAndStartDateProvidedTogether_ShouldThrowInvalidFilterException() {
         assertThrows(InvalidFilterException.class,
-                () -> expenseService.filterExpenses(email, "last_week", LocalDate.of(2026, 6, 1), null));
+                () -> expenseService.filterExpenses(email, "last_week", LocalDate.of(2026, 6, 1), null, pageable));
 
-        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any());
+        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any(), any());
     }
 
     @Test
     void filterExpenses_WhenRangeAndEndDateProvidedTogether_ShouldThrowInvalidFilterException() {
         assertThrows(InvalidFilterException.class,
-                () -> expenseService.filterExpenses(email, "last_month", null, LocalDate.of(2026, 7, 4)));
+                () -> expenseService.filterExpenses(email, "last_month", null, LocalDate.of(2026, 7, 4), pageable));
 
-        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any());
+        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any(), any());
     }
 
     @Test
     void filterExpenses_WhenRangeAndBothCustomDatesProvided_ShouldThrowInvalidFilterException() {
         assertThrows(InvalidFilterException.class,
                 () -> expenseService.filterExpenses(email, "last_3_months",
-                        LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 4)));
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 4), pageable));
 
-        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any());
+        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any(), any());
     }
 
     @Test
     void filterExpenses_WhenOnlyRangeProvided_ShouldQueryRepository() {
-        when(expenseRepository.findByUserEmailAndExpenseDateBetween(eq(email), any(), any()))
-                .thenReturn(List.of(sampleExpense));
+        when(expenseRepository.findByUserEmailAndExpenseDateBetween(eq(email), any(), any(), eq(pageable)))
+            .thenReturn(new PageImpl<>(List.of(sampleExpense), pageable, 1));
 
-        ExpenseListResponse response = expenseService.filterExpenses(email, "last_week", null, null);
+        ExpenseListResponse response = expenseService.filterExpenses(email, "last_week", null, null, pageable);
 
         assertNotNull(response);
         assertEquals(1, response.meta().totalCount());
-        verify(expenseRepository, times(1)).findByUserEmailAndExpenseDateBetween(eq(email), any(), any());
+        assertEquals("last_week", response.meta().appliedFilters().get("range"));
+        verify(expenseRepository, times(1)).findByUserEmailAndExpenseDateBetween(eq(email), any(), any(), eq(pageable));
     }
 
     @Test
     void filterExpenses_WhenOnlyCustomDatesProvided_ShouldQueryRepository() {
         LocalDate start = LocalDate.of(2026, 6, 1);
         LocalDate end = LocalDate.of(2026, 7, 4);
-        when(expenseRepository.findByUserEmailAndExpenseDateBetween(email, start, end))
-                .thenReturn(List.of(sampleExpense));
+        when(expenseRepository.findByUserEmailAndExpenseDateBetween(email, start, end, pageable))
+            .thenReturn(new PageImpl<>(List.of(sampleExpense), pageable, 1));
 
-        ExpenseListResponse response = expenseService.filterExpenses(email, null, start, end);
+        ExpenseListResponse response = expenseService.filterExpenses(email, null, start, end, pageable);
 
         assertNotNull(response);
-        verify(expenseRepository, times(1)).findByUserEmailAndExpenseDateBetween(email, start, end);
+        assertEquals("custom", response.meta().appliedFilters().get("range"));
+        verify(expenseRepository, times(1)).findByUserEmailAndExpenseDateBetween(email, start, end, pageable);
     }
 
     @Test
     void filterExpenses_WhenNoFiltersProvided_ShouldThrowInvalidFilterException() {
         assertThrows(InvalidFilterException.class,
-                () -> expenseService.filterExpenses(email, null, null, null));
+                () -> expenseService.filterExpenses(email, null, null, null, pageable));
     }
 
     @Test
     void filterExpenses_WhenRangeIsUnknown_ShouldThrowInvalidFilterException() {
         assertThrows(InvalidFilterException.class,
-                () -> expenseService.filterExpenses(email, "last_year", null, null));
+                () -> expenseService.filterExpenses(email, "last_year", null, null, pageable));
     }
 
     @Test
@@ -226,8 +237,8 @@ public class ExpenseServiceTest {
         LocalDate end = LocalDate.of(2026, 7, 1);
 
         assertThrows(InvalidFilterException.class,
-                () -> expenseService.filterExpenses(email, null, start, end));
+            () -> expenseService.filterExpenses(email, null, start, end, pageable));
 
-        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any());
+        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any(), any());
     }
 }
