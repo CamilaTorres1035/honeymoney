@@ -1,4 +1,4 @@
-# HoneyMoney – Expense Tracker API
+# HoneyMoney – Expense Tracker API (V1)
 
 Creado: 28 de junio de 2026 10:25
 Etiquetas: APIs, Spring Boot
