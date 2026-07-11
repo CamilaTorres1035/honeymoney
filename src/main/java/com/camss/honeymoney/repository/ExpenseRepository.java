@@ -7,11 +7,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.camss.honeymoney.model.Category;
 import com.camss.honeymoney.model.Expense;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long>{
     Page<Expense> findByUserEmail(String email, Pageable pageable);
     Page<Expense> findByUserEmailAndExpenseDateBetween(String email, LocalDate starDate, LocalDate endDate, Pageable pageable);
-
+    Page<Expense> findByUserEmailAndCategory(String email, Category category, Pageable pageable);
+    Page<Expense> findByUserEmailAndCategoryAndExpenseDateBetween(
+    String email, Category category, LocalDate start, LocalDate end, Pageable pageable);
     Optional<Expense> findByIdAndUserEmail(Long id, String email);
 }

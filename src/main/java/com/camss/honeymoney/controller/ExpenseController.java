@@ -7,6 +7,7 @@ import com.camss.honeymoney.dto.ExpenseListResponse;
 import com.camss.honeymoney.dto.ExpenseRequest;
 import com.camss.honeymoney.dto.ExpenseResponse;
 import com.camss.honeymoney.dto.ExpenseUpdateRequest;
+import com.camss.honeymoney.model.Category;
 import com.camss.honeymoney.service.ExpenseService;
 
 import jakarta.validation.Valid;
@@ -67,17 +68,17 @@ public class ExpenseController {
             @RequestParam(required = false) String range,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Category category,
             @PageableDefault(page = 0, size = 10) Pageable pageable) {
-        
+
         // Si no se envían filtros, responde con la lista completa
-        if (range == null && startDate == null && endDate == null) {
-            ExpenseListResponse response = expenseService.findAll(userDetails.getUsername(), pageable);
-            return ResponseEntity.ok(response);
+        if (range == null && startDate == null && endDate == null && category == null) {
+            return ResponseEntity.ok(expenseService.findAll(userDetails.getUsername(), pageable));
         }
-        
+
         // Si se envían filtros, ejecuta la lógica de filtrado
         ExpenseListResponse response = expenseService.filterExpenses(
-                userDetails.getUsername(), range, startDate, endDate, pageable);
+                userDetails.getUsername(), range, startDate, endDate, category, pageable);
         return ResponseEntity.ok(response);
     }
 
