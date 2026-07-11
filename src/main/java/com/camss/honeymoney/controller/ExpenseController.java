@@ -13,6 +13,8 @@ import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -64,17 +66,18 @@ public class ExpenseController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String range,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
         
         // Si no se envían filtros, responde con la lista completa
         if (range == null && startDate == null && endDate == null) {
-            ExpenseListResponse response = expenseService.findAll(userDetails.getUsername());
+            ExpenseListResponse response = expenseService.findAll(userDetails.getUsername(), pageable);
             return ResponseEntity.ok(response);
         }
         
         // Si se envían filtros, ejecuta la lógica de filtrado
         ExpenseListResponse response = expenseService.filterExpenses(
-                userDetails.getUsername(), range, startDate, endDate);
+                userDetails.getUsername(), range, startDate, endDate, pageable);
         return ResponseEntity.ok(response);
     }
 

@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,11 +76,11 @@ public class ExpenseService {
     }
 
     @Transactional(readOnly=true)
-    public ExpenseListResponse findAll(String userEmail){
-        List<Expense> expenses = expenseRepository.findByUserEmail(userEmail);
+    public ExpenseListResponse findAll(String userEmail, Pageable pageable){
+        Page<Expense> expenses = expenseRepository.findByUserEmail(userEmail, pageable);
         List<ExpenseResponse> data = expenses.stream().map(ExpenseResponse::new).toList();
 
-        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(data.size(), Map.of());
+        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(expenses.getTotalElements(), expenses.getTotalPages(), expenses.getNumber(), expenses.getSize(), expenses.isLast(), Map.of());
 
         return new ExpenseListResponse(data, meta);
     }
@@ -90,7 +92,7 @@ public class ExpenseService {
     }
 
     @Transactional(readOnly=true)
-    public ExpenseListResponse filterExpenses(String userEmail, String range, LocalDate startDate, LocalDate endDate){
+    public ExpenseListResponse filterExpenses(String userEmail, String range, LocalDate startDate, LocalDate endDate, Pageable pageable){
         boolean hasRange = range != null && !range.isBlank();
         boolean hasCustomDates = startDate != null || endDate != null;
 
@@ -121,10 +123,10 @@ public class ExpenseService {
             throw new InvalidFilterException("La fecha de inicio no puede ser posterior a la fecha fin.");
         }
 
-        List<Expense> expenses = expenseRepository.findByUserEmailAndExpenseDateBetween(userEmail, finalStart, finalEnd);
+        Page<Expense> expenses = expenseRepository.findByUserEmailAndExpenseDateBetween(userEmail, finalStart, finalEnd, pageable);
         List<ExpenseResponse> data = expenses.stream().map(ExpenseResponse::new).toList();
 
-        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(expenses.size(), Map.of("range", range != null ? range : "custom", "startDate", finalStart, "endDate", finalEnd));
+        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(expenses.getTotalElements(), expenses.getTotalPages(), expenses.getNumber(), expenses.getSize(), expenses.isLast(), Map.of("range", range != null ? range : "custom", "startDate", finalStart, "endDate", finalEnd));
 
         return new ExpenseListResponse(data, meta);
     }
