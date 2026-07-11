@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -45,7 +46,14 @@ import com.camss.honeymoney.service.ExpenseService;
  * GlobalExceptionHandler reales) mockeando solo la capa de servicio y el repositorio
  * de usuarios (usado internamente por UserDetailsServiceImpl para validar el JWT).
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+        "spring.datasource.url=jdbc:h2:mem:honeymoney-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.hibernate.ddl-auto=update"
+})
 @AutoConfigureMockMvc
 class ExpenseControllerTest {
 
@@ -189,8 +197,8 @@ class ExpenseControllerTest {
     @Test
     void getExpenses_WithoutFilters_ShouldCallFindAll() throws Exception {
         ExpenseListResponse listResponse = new ExpenseListResponse(
-                List.of(sampleResponse), new ExpenseListResponse.Meta(1, Map.of()));
-        when(expenseService.findAll(email)).thenReturn(listResponse);
+                List.of(sampleResponse), new ExpenseListResponse.Meta(1, 1, 0, 10, true, Map.of()));
+        when(expenseService.findAll(eq(email), any(Pageable.class))).thenReturn(listResponse);
 
         mockMvc.perform(get("/api/expenses").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -200,8 +208,8 @@ class ExpenseControllerTest {
     @Test
     void getExpenses_WithRangeFilter_ShouldCallFilterExpenses() throws Exception {
         ExpenseListResponse listResponse = new ExpenseListResponse(
-                List.of(sampleResponse), new ExpenseListResponse.Meta(1, Map.of("range", "last_week")));
-        when(expenseService.filterExpenses(eq(email), eq("last_week"), eq(null), eq(null)))
+                List.of(sampleResponse), new ExpenseListResponse.Meta(1, 1, 0, 10, true, Map.of("range", "last_week")));
+        when(expenseService.filterExpenses(eq(email), eq("last_week"), eq(null), eq(null), any(Pageable.class)))
                 .thenReturn(listResponse);
 
         mockMvc.perform(get("/api/expenses?range=last_week").header("Authorization", "Bearer " + token))
@@ -212,7 +220,7 @@ class ExpenseControllerTest {
     @Test
     void getExpenses_WhenServiceThrowsInvalidFilterException_ShouldReturn400() throws Exception {
         // Simula la regla de exclusión mutua evaluada en el service
-        when(expenseService.filterExpenses(anyString(), eq("last_week"), any(), any()))
+        when(expenseService.filterExpenses(anyString(), eq("last_week"), any(), any(), any(Pageable.class)))
                 .thenThrow(new InvalidFilterException(
                         "Los parámetros 'range' y 'startDate'/'endDate' son mutuamente excluyentes. Use solo uno de los dos."));
 

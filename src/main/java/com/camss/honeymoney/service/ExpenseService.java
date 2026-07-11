@@ -80,7 +80,7 @@ public class ExpenseService {
         Page<Expense> expenses = expenseRepository.findByUserEmail(userEmail, pageable);
         List<ExpenseResponse> data = expenses.stream().map(ExpenseResponse::new).toList();
 
-        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(data.size(), Map.of());
+        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(expenses.getTotalElements(), expenses.getTotalPages(), expenses.getNumber(), expenses.getSize(), expenses.isLast(), Map.of());
 
         return new ExpenseListResponse(data, meta);
     }
@@ -126,7 +126,7 @@ public class ExpenseService {
         Page<Expense> expenses = expenseRepository.findByUserEmailAndExpenseDateBetween(userEmail, finalStart, finalEnd, pageable);
         List<ExpenseResponse> data = expenses.stream().map(ExpenseResponse::new).toList();
 
-        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(data.size(), Map.of("range", range != null ? range : "custom", "startDate", finalStart, "endDate", finalEnd));
+        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(expenses.getTotalElements(), expenses.getTotalPages(), expenses.getNumber(), expenses.getSize(), expenses.isLast(), Map.of("range", range != null ? range : "custom", "startDate", finalStart, "endDate", finalEnd));
 
         return new ExpenseListResponse(data, meta);
     }

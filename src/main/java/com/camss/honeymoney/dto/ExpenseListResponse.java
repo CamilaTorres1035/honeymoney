@@ -9,6 +9,10 @@ public record ExpenseListResponse(
 ) {
     public record Meta(
         long totalCount,
+        int totalPages,
+        int currentPage,
+        int pageSize,
+        boolean isLast,
         Map<String, Object> appliedFilters
     ) {}
 }
