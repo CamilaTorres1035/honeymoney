@@ -11,6 +11,7 @@ Diseñada con foco en seguridad, claridad de contratos y buenas prácticas REST.
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=plastic&logo=springboot&logoColor=white)
 ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=plastic&logo=springsecurity&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=plastic&logo=jsonwebtokens&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=plastic&logo=postgresql&logoColor=white)
 ![Maven](https://img.shields.io/badge/Maven-C71A36?style=plastic&logo=apachemaven&logoColor=white)
 
 </div>
@@ -28,6 +29,7 @@ Este proyecto fue construido para aplicar conceptos clave de backend:
 | Manejo de errores | Formato de error unificado |
 | Modelado de dominio | Entidades y relaciones claras |
 | Validación de datos | Reglas de negocio en capa de servicio |
+| Persistencia | Migración de H2 in-memory a PostgreSQL |
 
 ---
 
@@ -37,6 +39,7 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado:
 
 - JDK 17
 - Maven 3.x
+- PostgreSQL (instancia local o remota, con una base de datos `honeymoney` creada)
 
 ---
 
@@ -45,6 +48,11 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado:
 ```bash
 git clone https://github.com/CamilaTorres1035/honeymoney
 cd honeymoney
+```
+
+Configura las variables de entorno necesarias (ver [Variables de entorno](#variables-de-entorno)), como mínimo `PASS_DB`. Puedes copiar `.env.example` como referencia.
+
+```bash
 mvn spring-boot:run
 ```
 
@@ -53,6 +61,24 @@ mvn spring-boot:run
 ```
 http://localhost:8080
 ```
+
+**Documentación interactiva (Swagger UI):**
+
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+---
+
+## Variables de entorno
+
+| Variable | Descripción | Obligatoria |
+|---|---|---|
+| `PASS_DB` | Contraseña de la base de datos PostgreSQL | Sí |
+| `JWT_SECRET` | Clave para firmar los JWT (HS256, base64 ≥ 256 bits) | Recomendada (tiene default solo para desarrollo local) |
+| `JWT_EXPIRATION` | Expiración del token en milisegundos (default: `3600000` = 1h) | No |
+
+> Ver `.env.example` para valores de referencia. Nunca commitees un `.env` real con secretos.
 
 ---
 
@@ -77,8 +103,12 @@ Authorization: Bearer <token>
 - Registro y login de usuarios
 - Autenticación con JWT
 - CRUD completo de gastos
-- Filtros por fecha (última semana, mes, rango personalizado)
+- Filtros por fecha (última semana, mes, últimos 3 meses, rango personalizado)
+- Filtro por categoría, combinable con los filtros de fecha
+- Catálogo de categorías vía endpoint público
+- Paginación en el listado de gastos
 - Aislamiento por usuario (multi-user seguro)
+- Documentación interactiva vía Swagger / OpenAPI
 
 ---
 
@@ -90,7 +120,8 @@ Authorization: Bearer <token>
 | Framework | Spring Boot |
 | Seguridad | Spring Security |
 | Autenticación | JWT |
-| Base de datos | H2 (in-memory) |
+| Base de datos | PostgreSQL |
+| Documentación API | springdoc-openapi (Swagger UI) |
 | Build tool | Maven |
 
 ---
@@ -120,15 +151,28 @@ Authorization: Bearer <token>
 |---|---|
 | `range` | `last_week` \| `last_month` \| `last_3_months` |
 | `startDate` / `endDate` | `YYYY-MM-DD` |
+| `category` | Una de las categorías del catálogo (ver abajo). Combinable con `range` o con `startDate`/`endDate` |
+| `page` / `size` | Paginación estándar (default: `page=0`, `size=10`) |
 
 **Ejemplos:**
 
 ```http
 GET /api/expenses?range=last_week
 GET /api/expenses?startDate=2026-06-01&endDate=2026-07-04
+GET /api/expenses?category=Groceries
+GET /api/expenses?category=Groceries&range=last_month
+GET /api/expenses?page=0&size=2
 ```
 
-> **Nota:** todas las fechas deben enviarse en formato estándar `YYYY-MM-DD`.
+> **Nota:** `range` y `startDate`/`endDate` son mutuamente excluyentes. Todas las fechas deben enviarse en formato estándar `YYYY-MM-DD`.
+
+### Categories
+
+| Método | Endpoint |
+|---|---|
+| `GET` | `/api/categories` |
+
+Endpoint público (no requiere token). Devuelve el catálogo fijo de categorías: `Groceries`, `Leisure`, `Electronics`, `Utilities`, `Clothing`, `Health`, `Others`.
 
 ---
 
@@ -136,7 +180,7 @@ GET /api/expenses?startDate=2026-06-01&endDate=2026-07-04
 
 - Todos los endpoints de gastos requieren autenticación
 - No se expone información sobre recursos de otros usuarios
-- Base de datos en memoria (no persistente para desarrollo)
+- Base de datos PostgreSQL persistente
 - Formato de fechas: `YYYY-MM-DD`
 
 ---
@@ -145,7 +189,7 @@ GET /api/expenses?startDate=2026-06-01&endDate=2026-07-04
 
 Toda la definición de la API, contratos, catálogo de errores y reglas de negocio:
 
-**Ver documentación completa:** [`/docs/api-spec.md`](/docs/api-spec.md)
+**Ver documentación completa:** [`/docs/api-spec.md`](/docs/api-spec-(V2).md)
 
 ---
 
@@ -159,9 +203,10 @@ mvn test
 
 ## Roadmap
 
-- [ ] Migrar a base de datos persistente
-- [ ] Paginación en listados
-- [ ] Filtro por categoría
+- [x] Migrar a base de datos persistente (PostgreSQL)
+- [x] Paginación en listados
+- [x] Filtro por categoría
+- [x] Endpoint de categorías
 - [ ] Refresh tokens (mejorar expiración de JWT)
 - [ ] Dockerización
 - [ ] Deploy
@@ -174,6 +219,7 @@ mvn test
 - Manejo de autenticación stateless
 - Validación de inputs
 - Diseño de APIs centradas en el usuario
+- Migración de un almacenamiento in-memory a una base de datos persistente
 
 ---
 
