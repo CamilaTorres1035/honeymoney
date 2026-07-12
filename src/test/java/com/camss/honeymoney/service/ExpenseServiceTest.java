@@ -20,6 +20,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -52,6 +54,10 @@ public class ExpenseServiceTest {
     @InjectMocks
     private ExpenseService expenseService;
 
+    // Declaramos el ArgumentCaptor para capturar objetos de tipo Expense
+    @Captor
+    private ArgumentCaptor<Expense> expenseCaptor;
+
     private User sampleUser;
     private Expense sampleExpense;
     private Pageable pageable;
@@ -61,6 +67,7 @@ public class ExpenseServiceTest {
     @BeforeEach
     void setUp() {
         sampleUser = new User();
+        sampleUser.setId(1L);
         sampleUser.setEmail(email);
 
         sampleExpense = new Expense();
@@ -74,16 +81,24 @@ public class ExpenseServiceTest {
     }
 
     @Test
-    void create_WhenUserExists_ShouldReturnExpenseResponse() {
-        ExpenseRequest request = mock(ExpenseRequest.class);
-        when(request.toEntity()).thenReturn(new Expense());
+    void create_WhenUserExists_ShouldReturnExpenseResponseAndTrimDescription() {
+        ExpenseRequest request = new ExpenseRequest(new BigDecimal("100.0"), Category.Groceries, "  Lunch  ", LocalDate.now());
+
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(sampleUser));
-        when(expenseRepository.save(any(Expense.class))).thenReturn(sampleExpense);
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ExpenseResponse response = expenseService.create(request, email);
 
         assertNotNull(response);
-        verify(expenseRepository, times(1)).save(any(Expense.class));
+
+        verify(userRepository, times(1)).findByEmail(email);
+        verify(expenseRepository, times(1)).save(expenseCaptor.capture());
+
+        // Verificaciones usando el captor
+        Expense expenseGuardado = expenseCaptor.getValue();
+        assertEquals("Lunch", expenseGuardado.getDescription());
+        assertEquals(sampleUser, expenseGuardado.getUser());
+        assertNotNull(expenseGuardado.getCreatedAt());
     }
 
     @Test
@@ -97,16 +112,20 @@ public class ExpenseServiceTest {
 
     @Test
     void update_WhenExpenseExists_ShouldUpdateFieldsAndReturnResponse() {
+        // Arrange
         ExpenseUpdateRequest request = new ExpenseUpdateRequest(new BigDecimal("150.0"), Category.Utilities, "Taxi", LocalDate.now());
 
         when(expenseRepository.findByIdAndUserEmail(expenseId, email)).thenReturn(Optional.of(sampleExpense));
         when(expenseRepository.save(any(Expense.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // Act
         ExpenseResponse response = expenseService.update(expenseId, request, email);
 
+        // Assert
         assertNotNull(response);
         assertEquals(new BigDecimal("150.0"), sampleExpense.getAmount());
         assertEquals(Category.Utilities, sampleExpense.getCategory());
+        assertEquals("Taxi", sampleExpense.getDescription());
     }
 
     @Test
@@ -115,6 +134,7 @@ public class ExpenseServiceTest {
         when(expenseRepository.findByIdAndUserEmail(expenseId, email)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> expenseService.update(expenseId, request, email));
+        verify(expenseRepository, never()).save(any(Expense.class));
     }
 
     @Test
