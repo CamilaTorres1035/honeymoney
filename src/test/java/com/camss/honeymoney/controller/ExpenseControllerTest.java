@@ -209,7 +209,7 @@ class ExpenseControllerTest {
     void getExpenses_WithRangeFilter_ShouldCallFilterExpenses() throws Exception {
         ExpenseListResponse listResponse = new ExpenseListResponse(
                 List.of(sampleResponse), new ExpenseListResponse.Meta(1, 1, 0, 10, true, Map.of("range", "last_week")));
-        when(expenseService.filterExpenses(eq(email), eq("last_week"), eq(null), eq(null), any(Pageable.class)))
+        when(expenseService.filterExpenses(eq(email), eq("last_week"), eq(null), eq(null),any(), any(Pageable.class)))
                 .thenReturn(listResponse);
 
         mockMvc.perform(get("/api/expenses?range=last_week").header("Authorization", "Bearer " + token))
@@ -220,7 +220,7 @@ class ExpenseControllerTest {
     @Test
     void getExpenses_WhenServiceThrowsInvalidFilterException_ShouldReturn400() throws Exception {
         // Simula la regla de exclusión mutua evaluada en el service
-        when(expenseService.filterExpenses(anyString(), eq("last_week"), any(), any(), any(Pageable.class)))
+        when(expenseService.filterExpenses(anyString(), eq("last_week"), any(),any(), any(), any(Pageable.class)))
                 .thenThrow(new InvalidFilterException(
                         "Los parámetros 'range' y 'startDate'/'endDate' son mutuamente excluyentes. Use solo uno de los dos."));
 

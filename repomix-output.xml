@@ -1,0 +1,3745 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.mvn/
+  wrapper/
+    maven-wrapper.properties
+docs/
+  api-spec.md
+  image.png
+src/
+  main/
+    java/
+      com/
+        camss/
+          honeymoney/
+            config/
+              SecurityConfig.java
+              SwaggerConfig.java
+            controller/
+              AuthController.java
+              CategoryController.java
+              ExpenseController.java
+            dto/
+              ExpenseListResponse.java
+              ExpenseRequest.java
+              ExpenseResponse.java
+              ExpenseUpdateRequest.java
+              LoginRequest.java
+              LoginResponse.java
+              RegisterRequest.java
+              RegisterResponse.java
+            exception/
+              DuplicatedEmailException.java
+              ErrorResponse.java
+              GlobalExceptionHandler.java
+              InvalidFilterException.java
+              ResourceNotFoundException.java
+            model/
+              Category.java
+              Expense.java
+              User.java
+            repository/
+              ExpenseRepository.java
+              UserRepository.java
+            security/
+              JwtAuthenticationFilter.java
+              JwtService.java
+              UserDetailsServiceImpl.java
+            service/
+              AuthService.java
+              ExpenseService.java
+            HoneymoneyApplication.java
+    resources/
+      application.properties
+  test/
+    java/
+      com/
+        camss/
+          honeymoney/
+            controller/
+              AuthControllerTest.java
+              ExpenseControllerTest.java
+            security/
+              JwtAuthenticationFilterTest.java
+              JwtServiceTest.java
+              UserDetailsServiceImplTest.java
+            service/
+              AuthServiceTest.java
+              ExpenseServiceTest.java
+            HoneymoneyApplicationTests.java
+.env.example
+.gitattributes
+.gitignore
+mvnw
+mvnw.cmd
+pom.xml
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".mvn/wrapper/maven-wrapper.properties">
+wrapperVersion=3.3.4
+distributionType=only-script
+distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/config/SwaggerConfig.java">
+package com.camss.honeymoney.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+
+@Configuration
+public class SwaggerConfig {
+    @Bean
+    public OpenAPI customOpenAPI(){
+        return new OpenAPI()
+            .info(new Info()
+                .title("HoneyMoney API")
+                .version("v1")
+                .description("API de autenticación y gastos"))
+            .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+            .components(new Components().addSecuritySchemes("bearerAuth", 
+                new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT")
+            ));
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/controller/CategoryController.java">
+package com.camss.honeymoney.controller;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.camss.honeymoney.model.Category;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+
+
+@RestController
+@RequestMapping("/api/categories")
+public class CategoryController {
+    @GetMapping
+    public ResponseEntity<List<String>> getAllCategories() {
+        List<String> categories = Stream.of(Category.values()).map(Enum::name).toList();
+        return ResponseEntity.ok(categories);
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/dto/ExpenseRequest.java">
+package com.camss.honeymoney.dto;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import com.camss.honeymoney.model.Category;
+import com.camss.honeymoney.model.Expense;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
+public record ExpenseRequest(
+        @NotNull(message = "El monto es obligatorio") @Positive(message = "El monto debe ser mayor a cero") BigDecimal amount,
+        @NotNull(message = "La categoria es obligatoria") Category category,
+        String description, // Opcional por defecto al no tener @NotNull ni @NotBlank
+        @NotNull(message = "La fecha del gasto es obligatoria") LocalDate expenseDate) {
+    public Expense toEntity() {
+        Expense expense = new Expense();
+        expense.setAmount(this.amount());
+        expense.setCategory(this.category());
+        expense.setDescription(this.description());
+        expense.setExpenseDate(this.expenseDate());
+        return expense;
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/dto/ExpenseResponse.java">
+package com.camss.honeymoney.dto;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+
+import com.camss.honeymoney.model.Category;
+import com.camss.honeymoney.model.Expense;
+
+public record ExpenseResponse(
+    Long id,
+    BigDecimal amount,
+    Category category,
+    String description,
+    LocalDate expenseDate,
+    Instant createdAt,
+    Instant updatedAt
+) {
+    // Constructor compacto de mapeo
+    public ExpenseResponse(Expense expense) {
+        this(
+            expense.getId(), 
+            expense.getAmount(), 
+            expense.getCategory(), 
+            expense.getDescription(), 
+            expense.getExpenseDate(), 
+            expense.getCreatedAt(), 
+            expense.getUpdatedAt()
+        );
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/dto/ExpenseUpdateRequest.java">
+package com.camss.honeymoney.dto;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import com.camss.honeymoney.model.Category;
+import jakarta.validation.constraints.Positive;
+
+public record ExpenseUpdateRequest(
+    @Positive(message = "El monto debe ser mayor a cero")
+    BigDecimal amount,
+    Category category,
+    String description, // Cambiado de Optional<String> a String
+    LocalDate expenseDate
+) {}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/dto/LoginRequest.java">
+package com.camss.honeymoney.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+public record LoginRequest(
+    @NotBlank(message = "El correo es obligatori")
+    @Email(message = "El formato de correo es no valido")
+    String email,
+
+    @NotBlank(message = "La contraseña es obligatoria")
+    String password
+) {}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/dto/RegisterRequest.java">
+package com.camss.honeymoney.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record RegisterRequest(
+    @NotBlank(message = "El nombre es obligatorio")
+    String name,
+
+    @NotBlank(message = "El correo es obligatori")
+    @Email(message = "El formato de correo es no valido")
+    String email,
+
+    @NotBlank(message = "La contraseña es obligatoria")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
+    String password
+) {}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/dto/RegisterResponse.java">
+package com.camss.honeymoney.dto;
+
+import java.time.Instant;
+
+public record RegisterResponse(
+    Long id,
+    String name,
+    String email,
+    Instant createdAt
+) {}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/exception/DuplicatedEmailException.java">
+package com.camss.honeymoney.exception;
+
+public class DuplicatedEmailException extends RuntimeException{
+    public DuplicatedEmailException(String message){
+        super(message);
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/exception/ErrorResponse.java">
+package com.camss.honeymoney.exception;
+
+import java.time.Instant;
+import java.util.List;
+
+public record ErrorResponse(
+    Instant timestamp,
+    int status,
+    String error,
+    String message,
+    String path,
+    List<FieldError> details
+) {
+    public record FieldError(String field, String issue) {}
+
+    // Constructor de conveniencia para errores sin detalles
+    public ErrorResponse(Instant timestamp, int status, String error, String message, String path) {
+        this(timestamp, status, error, message, path, null);
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/exception/InvalidFilterException.java">
+package com.camss.honeymoney.exception;
+
+public class InvalidFilterException extends RuntimeException{
+    public InvalidFilterException(String message){
+        super(message);
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/exception/ResourceNotFoundException.java">
+package com.camss.honeymoney.exception;
+
+public class ResourceNotFoundException extends RuntimeException{
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/model/Category.java">
+package com.camss.honeymoney.model;
+
+public enum Category {
+    Groceries,
+    Leisure,
+    Electronics,
+    Utilities,
+    Clothing,
+    Health,
+    Others
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/model/User.java">
+package com.camss.honeymoney.model;
+
+import java.time.Instant;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "users")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @Column(unique=true, nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    private Instant createdAt;
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/security/JwtAuthenticationFilter.java">
+package com.camss.honeymoney.security;
+
+import java.io.IOException;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private final HandlerExceptionResolver handlerExceptionResolver;
+    private final JwtService jwtService;
+    private final UserDetailsServiceImpl userDetailsServiceImpl;
+
+    public JwtAuthenticationFilter(JwtService jwtService,
+            UserDetailsServiceImpl userDetailsServiceImpl,
+            HandlerExceptionResolver handlerExceptionResolver) {
+        this.jwtService = jwtService;
+        this.userDetailsServiceImpl = userDetailsServiceImpl;
+        this.handlerExceptionResolver = handlerExceptionResolver;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        final String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")){
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            final String jwt = authHeader.substring(7);
+            final String userEmail = jwtService.extractUserName(jwt);
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (userEmail != null && authentication == null){
+                UserDetails userDetails = this.userDetailsServiceImpl.loadUserByUsername(userEmail);
+
+                if (jwtService.isTokenValid(jwt, userDetails)){
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,null ,userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            }
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            handlerExceptionResolver.resolveException(request, response, null, e);
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/security/JwtService.java">
+package com.camss.honeymoney.security;
+
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+
+// Los métodos a usar son generateToken(), isTokenValid() y getExpirationTime()
+
+@Service
+public class JwtService {
+    @Value("${jwt.secret}")
+    private String secretKey;
+
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
+
+    public String extractUserName(String token){
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    public String generateToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails);
+    }
+
+    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails){
+        return buildToken(extraClaims, userDetails, jwtExpiration);
+    }
+
+    public long getExpirationTime() {
+        return jwtExpiration;
+    }
+
+    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration){
+        return Jwts
+            .builder()
+            .setClaims(extraClaims)
+            .setSubject(userDetails.getUsername())
+            .setIssuedAt(new Date(System.currentTimeMillis()))
+            .setExpiration(new Date(System.currentTimeMillis() + expiration))
+            .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+            .compact();
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails){
+        final String username = extractUserName(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts
+            .parserBuilder()
+            .setSigningKey(getSignInKey())
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+    }
+
+    private Key getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/security/UserDetailsServiceImpl.java">
+package com.camss.honeymoney.security;
+
+import java.util.Collections;
+
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import com.camss.honeymoney.model.User;
+import com.camss.honeymoney.repository.UserRepository;
+
+@Service
+public class UserDetailsServiceImpl implements UserDetailsService {
+
+    private final UserRepository userRepository;
+
+    UserDetailsServiceImpl(UserRepository userRepository){
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), Collections.emptyList());
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/HoneymoneyApplication.java">
+package com.camss.honeymoney;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class HoneymoneyApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(HoneymoneyApplication.class, args);
+	}
+
+}
+</file>
+
+<file path="src/test/java/com/camss/honeymoney/controller/AuthControllerTest.java">
+package com.camss.honeymoney.controller;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.Instant;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.camss.honeymoney.dto.LoginResponse;
+import com.camss.honeymoney.dto.RegisterResponse;
+import com.camss.honeymoney.exception.DuplicatedEmailException;
+import com.camss.honeymoney.service.AuthService;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class AuthControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private AuthService authService;
+
+    // ---------------------------------------------------------------
+    // Registro
+    // ---------------------------------------------------------------
+
+    @Test
+    void register_WithValidBody_ShouldReturn201() throws Exception {
+        RegisterResponse response = new RegisterResponse(1L, "Carlos Mendoza", "carlos@example.com", Instant.now());
+        when(authService.signUp(any())).thenReturn(response);
+
+        String body = """
+                {
+                  "name": "Carlos Mendoza",
+                  "email": "carlos@example.com",
+                  "password": "PasswordSegura123!"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value("carlos@example.com"));
+    }
+
+    @Test
+    void register_WithInvalidEmail_ShouldReturn400() throws Exception {
+        String body = """
+                {
+                  "name": "Carlos Mendoza",
+                  "email": "no-es-un-email",
+                  "password": "PasswordSegura123!"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.details[0].field").value("email"));
+    }
+
+    @Test
+    void register_WithShortPassword_ShouldReturn400() throws Exception {
+        String body = """
+                {
+                  "name": "Carlos Mendoza",
+                  "email": "carlos@example.com",
+                  "password": "1234567"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_WhenEmailAlreadyExists_ShouldReturn409() throws Exception {
+        when(authService.signUp(any()))
+                .thenThrow(new DuplicatedEmailException("El email ya está registrado: carlos@example.com"));
+
+        String body = """
+                {
+                  "name": "Carlos Mendoza",
+                  "email": "carlos@example.com",
+                  "password": "PasswordSegura123!"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    // ---------------------------------------------------------------
+    // Login
+    // ---------------------------------------------------------------
+
+    @Test
+    void login_WithValidCredentials_ShouldReturn200AndToken() throws Exception {
+        LoginResponse response = new LoginResponse("fake.jwt.token",
+                new LoginResponse.UserSummary(1L, "Carlos Mendoza", "carlos@example.com"));
+        when(authService.authenticate(any())).thenReturn(response);
+
+        String body = """
+                {
+                  "email": "carlos@example.com",
+                  "password": "PasswordSegura123!"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("fake.jwt.token"))
+                .andExpect(jsonPath("$.user.email").value("carlos@example.com"));
+    }
+
+    @Test
+    void login_WithInvalidCredentials_ShouldReturn401WithGenericMessage() throws Exception {
+        when(authService.authenticate(any())).thenThrow(new BadCredentialsException("Bad credentials"));
+
+        String body = """
+                {
+                  "email": "carlos@example.com",
+                  "password": "incorrecta"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Credenciales inválidas"));
+    }
+
+    @Test
+    void login_WithMissingFields_ShouldReturn400() throws Exception {
+        String body = """
+                {
+                  "email": "",
+                  "password": ""
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+}
+</file>
+
+<file path="src/test/java/com/camss/honeymoney/security/JwtAuthenticationFilterTest.java">
+package com.camss.honeymoney.security;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@ExtendWith(MockitoExtension.class)
+public class JwtAuthenticationFilterTest {
+    @Mock private JwtService jwtService;
+    @Mock private UserDetailsServiceImpl userDetailsServiceImpl;
+    @Mock private HandlerExceptionResolver handlerExceptionResolver;
+    @Mock private HttpServletRequest request;
+    @Mock private HttpServletResponse response;
+    @Mock private FilterChain filterChain;
+    @Mock private UserDetails userDetails;
+
+    private JwtAuthenticationFilter filter;
+
+    @BeforeEach
+    void setUp() {
+        filter = new JwtAuthenticationFilter(jwtService, userDetailsServiceImpl, handlerExceptionResolver);
+    }
+
+    @AfterEach
+    void tearDown(){
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void doFilter_ShouldContinueChain_WhenNoAuthHeader() throws Exception {
+        when(request.getHeader("Authorization")).thenReturn(null);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilter_ShouldContinueChain_WhenHeaderDoesNotStartWithBearer() throws Exception{
+        when(request.getHeader("Authorization")).thenReturn("Basic algo123");
+
+        filter.doFilter(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilter_ShouldSetAuthentication_WhenTokenIsValid() throws Exception {
+        String token = "valid.jwt.token";
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(jwtService.extractUserName(token)).thenReturn("carlos@example.com");
+        when(userDetailsServiceImpl.loadUserByUsername("carlos@example.com")).thenReturn(userDetails);
+        when(jwtService.isTokenValid(token, userDetails)).thenReturn(true);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain, times(1)).doFilter(request, response);
+    }
+
+    @Test
+    void doFilter_ShouldNotSetAuthentication_WhenTokenIsInvalid() throws Exception {
+        String token = "invalid.jwt.token";
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(jwtService.extractUserName(token)).thenReturn("carlos@example.com");
+        when(userDetailsServiceImpl.loadUserByUsername("carlos@example.com")).thenReturn(userDetails);
+        when(jwtService.isTokenValid(token, userDetails)).thenReturn(false);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain, times(1)).doFilter(request, response); // debe continuar igual, solo sin autenticar
+    }
+
+    @Test
+    void doFilter_ShouldDelegateToExceptionResolver_WhenJwtServiceThrows() throws Exception {
+        String token = "broken.jwt.token";
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(jwtService.extractUserName(token)).thenThrow(new RuntimeException("Token corrupto"));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(handlerExceptionResolver, times(1)).resolveException(eq(request), eq(response), eq(null), any(RuntimeException.class));
+        verify(filterChain, never()).doFilter(request, response);
+    }
+}
+</file>
+
+<file path="src/test/java/com/camss/honeymoney/security/JwtServiceTest.java">
+package com.camss.honeymoney.security;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+
+import io.jsonwebtoken.security.SignatureException;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import io.jsonwebtoken.ExpiredJwtException;
+
+class JwtServiceTest {
+    private JwtService jwtService;
+    private UserDetails mockUser;
+
+    private final String base64Secret = Base64.getEncoder().encodeToString("3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b".getBytes());
+
+    private final long expirationTime = 3600000;
+
+    @BeforeEach
+    void setUp() {
+        jwtService = new JwtService();
+
+        // Inyectamos manualmente los valores de @Value
+        ReflectionTestUtils.setField(jwtService, "secretKey", base64Secret);
+        ReflectionTestUtils.setField(jwtService, "jwtExpiration", expirationTime);
+
+        // Simulamos el UserDetails de Spring Security
+        mockUser = Mockito.mock(UserDetails.class);
+        when(mockUser.getUsername()).thenReturn("usuario@prueba.com");
+    }
+
+    @Test
+    void generateToken_ShouldReturnValidToken(){
+        String token = jwtService.generateToken(mockUser);
+
+        assertNotNull(token);
+        assertEquals("usuario@prueba.com", jwtService.extractUserName(token));
+    }
+
+    @Test
+    void isTokenValid_ShouldReturnTrue_WhenTokenIsCorrect(){
+        String token = jwtService.generateToken(mockUser);
+
+        boolean isValid = jwtService.isTokenValid(token, mockUser);
+
+        assertTrue(isValid);
+    }
+
+    @Test
+    void isTokenValid_ShouldReturnFalse_WhenUsernameDoesNotMatch(){
+        String token = jwtService.generateToken(mockUser);
+
+        UserDetails wrongUser = Mockito.mock(UserDetails.class);
+
+        when(wrongUser.getUsername()).thenReturn("otroUsuario@prueba.com");
+
+        boolean isValid = jwtService.isTokenValid(token, wrongUser);
+
+        assertFalse(isValid);
+    }
+
+    @Test 
+    void getExpirationTime_ShouldReturnConfiguredValue(){
+        assertEquals(expirationTime, jwtService.getExpirationTime());
+    }
+
+    @Test
+    void isTokenExpired_ShoulThrowException_WhenTokenIsExpired(){
+        // Forzamos expiración estableciendo la expiración a 0 o negativo
+        ReflectionTestUtils.setField(jwtService, "jwtExpiration", -1000L);
+        String expiredToken = jwtService.generateToken(mockUser);
+
+        assertThrows(ExpiredJwtException.class, () -> {jwtService.isTokenValid(expiredToken, mockUser);});
+    }
+
+    @Test
+    void generateToken_WithExtraClaims_ShouldIncludeClaimsPayload(){
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("role", "ROLE_ADMIN");
+        extraClaims.put("userId", 123);
+
+        String token = jwtService.generateToken(extraClaims, mockUser);
+        String extractedRole = jwtService.extractClaim(token, claims -> claims.get("role", String.class));
+        Integer extractedId = jwtService.extractClaim(token, claims -> claims.get("userId", Integer.class));
+
+        assertEquals("ROLE_ADMIN", extractedRole);
+        assertEquals(123, extractedId);
+    }
+
+    @Test 
+    void extractAllClaims_ShouldThrowSignatureException_WhenTokenIsTampered(){
+        String validToken = jwtService.generateToken(mockUser);
+        String[] parts = validToken.split("\\.");
+
+        String tamperedPayload = parts[1] + "X";
+        String tamperedToken = parts[0] + "." + tamperedPayload + "." + parts[2];
+        
+        assertThrows(SignatureException.class, () -> {
+            jwtService.extractUserName(tamperedToken);
+        });
+    }
+}
+</file>
+
+<file path="src/test/java/com/camss/honeymoney/security/UserDetailsServiceImplTest.java">
+package com.camss.honeymoney.security;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import com.camss.honeymoney.model.User;
+import com.camss.honeymoney.repository.UserRepository;
+
+@ExtendWith(MockitoExtension.class)
+public class UserDetailsServiceImplTest {
+    @Mock
+    private UserRepository userRepository;
+
+    private UserDetailsServiceImpl userDetailsService;
+
+    @BeforeEach
+    void setUp(){
+        userDetailsService = new UserDetailsServiceImpl(userRepository);
+    }
+
+    @Test
+    void loadUserByUsername_ShouldReturnUserDetails_WhenUserExists(){
+        User user = new User();
+        user.setEmail("usuario@prueba.com");
+        user.setPassword("hashedPassword123");
+
+        when(userRepository.findByEmail("usuario@prueba.com")).thenReturn(Optional.of(user));
+
+        UserDetails result = userDetailsService.loadUserByUsername("usuario@prueba.com");
+
+        assertEquals("usuario@prueba.com", result.getUsername());
+        assertEquals("hashedPassword123", result.getPassword());
+    }
+
+    @Test
+    void loadUserByUsername_ShouldThrowException_WhenUserNotFound(){
+        when(userRepository.findByEmail("noexiste@prueba.com")).thenReturn(Optional.empty());
+        assertThrows(UsernameNotFoundException.class, () -> {userDetailsService.loadUserByUsername("noexiste@prueba.com");});
+    }
+}
+</file>
+
+<file path="src/test/java/com/camss/honeymoney/HoneymoneyApplicationTests.java">
+package com.camss.honeymoney;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class HoneymoneyApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}
+</file>
+
+<file path=".env.example">
+# Copia este archivo como ".env" (o exporta las variables en tu shell / configuración
+# de ejecución del IDE) y NUNCA commitees el ".env" real. Este archivo de ejemplo sí
+# se commitea porque solo contiene valores de referencia, no secretos reales.
+
+# Secreto usado para firmar los JWT (HS256). Debe ser una cadena base64 de al menos
+# 256 bits (32 bytes). Genera una nueva con:
+#   openssl rand -base64 32
+JWT_SECRET=f16+5dQnMlaAAaM6RCzUkbe8PpVQXowBmV8jUMJR2Ak=
+
+# Tiempo de expiración del token en milisegundos (3600000 = 1 hora)
+JWT_EXPIRATION=3600000
+</file>
+
+<file path=".gitattributes">
+/mvnw text eol=lf
+*.cmd text eol=crlf
+</file>
+
+<file path="mvnw">
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup batch script, version 3.3.4
+#
+# Optional ENV vars
+# -----------------
+#   JAVA_HOME - location of a JDK home dir, required when download maven via java source
+#   MVNW_REPOURL - repo url base for downloading maven distribution
+#   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+#   MVNW_VERBOSE - true: enable verbose log; debug: trace the mvnw script; others: silence the output
+# ----------------------------------------------------------------------------
+
+set -euf
+[ "${MVNW_VERBOSE-}" != debug ] || set -x
+
+# OS specific support.
+native_path() { printf %s\\n "$1"; }
+case "$(uname)" in
+CYGWIN* | MINGW*)
+  [ -z "${JAVA_HOME-}" ] || JAVA_HOME="$(cygpath --unix "$JAVA_HOME")"
+  native_path() { cygpath --path --windows "$1"; }
+  ;;
+esac
+
+# set JAVACMD and JAVACCMD
+set_java_home() {
+  # For Cygwin and MinGW, ensure paths are in Unix format before anything is touched
+  if [ -n "${JAVA_HOME-}" ]; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+      # IBM's JDK on AIX uses strange locations for the executables
+      JAVACMD="$JAVA_HOME/jre/sh/java"
+      JAVACCMD="$JAVA_HOME/jre/sh/javac"
+    else
+      JAVACMD="$JAVA_HOME/bin/java"
+      JAVACCMD="$JAVA_HOME/bin/javac"
+
+      if [ ! -x "$JAVACMD" ] || [ ! -x "$JAVACCMD" ]; then
+        echo "The JAVA_HOME environment variable is not defined correctly, so mvnw cannot run." >&2
+        echo "JAVA_HOME is set to \"$JAVA_HOME\", but \"\$JAVA_HOME/bin/java\" or \"\$JAVA_HOME/bin/javac\" does not exist." >&2
+        return 1
+      fi
+    fi
+  else
+    JAVACMD="$(
+      'set' +e
+      'unset' -f command 2>/dev/null
+      'command' -v java
+    )" || :
+    JAVACCMD="$(
+      'set' +e
+      'unset' -f command 2>/dev/null
+      'command' -v javac
+    )" || :
+
+    if [ ! -x "${JAVACMD-}" ] || [ ! -x "${JAVACCMD-}" ]; then
+      echo "The java/javac command does not exist in PATH nor is JAVA_HOME set, so mvnw cannot run." >&2
+      return 1
+    fi
+  fi
+}
+
+# hash string like Java String::hashCode
+hash_string() {
+  str="${1:-}" h=0
+  while [ -n "$str" ]; do
+    char="${str%"${str#?}"}"
+    h=$(((h * 31 + $(LC_CTYPE=C printf %d "'$char")) % 4294967296))
+    str="${str#?}"
+  done
+  printf %x\\n $h
+}
+
+verbose() { :; }
+[ "${MVNW_VERBOSE-}" != true ] || verbose() { printf %s\\n "${1-}"; }
+
+die() {
+  printf %s\\n "$1" >&2
+  exit 1
+}
+
+trim() {
+  # MWRAPPER-139:
+  #   Trims trailing and leading whitespace, carriage returns, tabs, and linefeeds.
+  #   Needed for removing poorly interpreted newline sequences when running in more
+  #   exotic environments such as mingw bash on Windows.
+  printf "%s" "${1}" | tr -d '[:space:]'
+}
+
+scriptDir="$(dirname "$0")"
+scriptName="$(basename "$0")"
+
+# parse distributionUrl and optional distributionSha256Sum, requires .mvn/wrapper/maven-wrapper.properties
+while IFS="=" read -r key value; do
+  case "${key-}" in
+  distributionUrl) distributionUrl=$(trim "${value-}") ;;
+  distributionSha256Sum) distributionSha256Sum=$(trim "${value-}") ;;
+  esac
+done <"$scriptDir/.mvn/wrapper/maven-wrapper.properties"
+[ -n "${distributionUrl-}" ] || die "cannot read distributionUrl property in $scriptDir/.mvn/wrapper/maven-wrapper.properties"
+
+case "${distributionUrl##*/}" in
+maven-mvnd-*bin.*)
+  MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/
+  case "${PROCESSOR_ARCHITECTURE-}${PROCESSOR_ARCHITEW6432-}:$(uname -a)" in
+  *AMD64:CYGWIN* | *AMD64:MINGW*) distributionPlatform=windows-amd64 ;;
+  :Darwin*x86_64) distributionPlatform=darwin-amd64 ;;
+  :Darwin*arm64) distributionPlatform=darwin-aarch64 ;;
+  :Linux*x86_64*) distributionPlatform=linux-amd64 ;;
+  *)
+    echo "Cannot detect native platform for mvnd on $(uname)-$(uname -m), use pure java version" >&2
+    distributionPlatform=linux-amd64
+    ;;
+  esac
+  distributionUrl="${distributionUrl%-bin.*}-$distributionPlatform.zip"
+  ;;
+maven-mvnd-*) MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/ ;;
+*) MVN_CMD="mvn${scriptName#mvnw}" _MVNW_REPO_PATTERN=/org/apache/maven/ ;;
+esac
+
+# apply MVNW_REPOURL and calculate MAVEN_HOME
+# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
+[ -z "${MVNW_REPOURL-}" ] || distributionUrl="$MVNW_REPOURL$_MVNW_REPO_PATTERN${distributionUrl#*"$_MVNW_REPO_PATTERN"}"
+distributionUrlName="${distributionUrl##*/}"
+distributionUrlNameMain="${distributionUrlName%.*}"
+distributionUrlNameMain="${distributionUrlNameMain%-bin}"
+MAVEN_USER_HOME="${MAVEN_USER_HOME:-${HOME}/.m2}"
+MAVEN_HOME="${MAVEN_USER_HOME}/wrapper/dists/${distributionUrlNameMain-}/$(hash_string "$distributionUrl")"
+
+exec_maven() {
+  unset MVNW_VERBOSE MVNW_USERNAME MVNW_PASSWORD MVNW_REPOURL || :
+  exec "$MAVEN_HOME/bin/$MVN_CMD" "$@" || die "cannot exec $MAVEN_HOME/bin/$MVN_CMD"
+}
+
+if [ -d "$MAVEN_HOME" ]; then
+  verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+  exec_maven "$@"
+fi
+
+case "${distributionUrl-}" in
+*?-bin.zip | *?maven-mvnd-?*-?*.zip) ;;
+*) die "distributionUrl is not valid, must match *-bin.zip or maven-mvnd-*.zip, but found '${distributionUrl-}'" ;;
+esac
+
+# prepare tmp dir
+if TMP_DOWNLOAD_DIR="$(mktemp -d)" && [ -d "$TMP_DOWNLOAD_DIR" ]; then
+  clean() { rm -rf -- "$TMP_DOWNLOAD_DIR"; }
+  trap clean HUP INT TERM EXIT
+else
+  die "cannot create temp dir"
+fi
+
+mkdir -p -- "${MAVEN_HOME%/*}"
+
+# Download and Install Apache Maven
+verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+verbose "Downloading from: $distributionUrl"
+verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+
+# select .zip or .tar.gz
+if ! command -v unzip >/dev/null; then
+  distributionUrl="${distributionUrl%.zip}.tar.gz"
+  distributionUrlName="${distributionUrl##*/}"
+fi
+
+# verbose opt
+__MVNW_QUIET_WGET=--quiet __MVNW_QUIET_CURL=--silent __MVNW_QUIET_UNZIP=-q __MVNW_QUIET_TAR=''
+[ "${MVNW_VERBOSE-}" != true ] || __MVNW_QUIET_WGET='' __MVNW_QUIET_CURL='' __MVNW_QUIET_UNZIP='' __MVNW_QUIET_TAR=v
+
+# normalize http auth
+case "${MVNW_PASSWORD:+has-password}" in
+'') MVNW_USERNAME='' MVNW_PASSWORD='' ;;
+has-password) [ -n "${MVNW_USERNAME-}" ] || MVNW_USERNAME='' MVNW_PASSWORD='' ;;
+esac
+
+if [ -z "${MVNW_USERNAME-}" ] && command -v wget >/dev/null; then
+  verbose "Found wget ... using wget"
+  wget ${__MVNW_QUIET_WGET:+"$__MVNW_QUIET_WGET"} "$distributionUrl" -O "$TMP_DOWNLOAD_DIR/$distributionUrlName" || die "wget: Failed to fetch $distributionUrl"
+elif [ -z "${MVNW_USERNAME-}" ] && command -v curl >/dev/null; then
+  verbose "Found curl ... using curl"
+  curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$distributionUrl" || die "curl: Failed to fetch $distributionUrl"
+elif set_java_home; then
+  verbose "Falling back to use Java to download"
+  javaSource="$TMP_DOWNLOAD_DIR/Downloader.java"
+  targetZip="$TMP_DOWNLOAD_DIR/$distributionUrlName"
+  cat >"$javaSource" <<-END
+	public class Downloader extends java.net.Authenticator
+	{
+	  protected java.net.PasswordAuthentication getPasswordAuthentication()
+	  {
+	    return new java.net.PasswordAuthentication( System.getenv( "MVNW_USERNAME" ), System.getenv( "MVNW_PASSWORD" ).toCharArray() );
+	  }
+	  public static void main( String[] args ) throws Exception
+	  {
+	    setDefault( new Downloader() );
+	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
+	  }
+	}
+	END
+  # For Cygwin/MinGW, switch paths to Windows format before running javac and java
+  verbose " - Compiling Downloader.java ..."
+  "$(native_path "$JAVACCMD")" "$(native_path "$javaSource")" || die "Failed to compile Downloader.java"
+  verbose " - Running Downloader.java ..."
+  "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")"
+fi
+
+# If specified, validate the SHA-256 sum of the Maven distribution zip file
+if [ -n "${distributionSha256Sum-}" ]; then
+  distributionSha256Result=false
+  if [ "$MVN_CMD" = mvnd.sh ]; then
+    echo "Checksum validation is not supported for maven-mvnd." >&2
+    echo "Please disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." >&2
+    exit 1
+  elif command -v sha256sum >/dev/null; then
+    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | sha256sum -c - >/dev/null 2>&1; then
+      distributionSha256Result=true
+    fi
+  elif command -v shasum >/dev/null; then
+    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | shasum -a 256 -c >/dev/null 2>&1; then
+      distributionSha256Result=true
+    fi
+  else
+    echo "Checksum validation was requested but neither 'sha256sum' or 'shasum' are available." >&2
+    echo "Please install either command, or disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." >&2
+    exit 1
+  fi
+  if [ $distributionSha256Result = false ]; then
+    echo "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised." >&2
+    echo "If you updated your Maven version, you need to update the specified distributionSha256Sum property." >&2
+    exit 1
+  fi
+fi
+
+# unzip and move
+if command -v unzip >/dev/null; then
+  unzip ${__MVNW_QUIET_UNZIP:+"$__MVNW_QUIET_UNZIP"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -d "$TMP_DOWNLOAD_DIR" || die "failed to unzip"
+else
+  tar xzf${__MVNW_QUIET_TAR:+"$__MVNW_QUIET_TAR"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -C "$TMP_DOWNLOAD_DIR" || die "failed to untar"
+fi
+
+# Find the actual extracted directory name (handles snapshots where filename != directory name)
+actualDistributionDir=""
+
+# First try the expected directory name (for regular distributions)
+if [ -d "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain" ]; then
+  if [ -f "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain/bin/$MVN_CMD" ]; then
+    actualDistributionDir="$distributionUrlNameMain"
+  fi
+fi
+
+# If not found, search for any directory with the Maven executable (for snapshots)
+if [ -z "$actualDistributionDir" ]; then
+  # enable globbing to iterate over items
+  set +f
+  for dir in "$TMP_DOWNLOAD_DIR"/*; do
+    if [ -d "$dir" ]; then
+      if [ -f "$dir/bin/$MVN_CMD" ]; then
+        actualDistributionDir="$(basename "$dir")"
+        break
+      fi
+    fi
+  done
+  set -f
+fi
+
+if [ -z "$actualDistributionDir" ]; then
+  verbose "Contents of $TMP_DOWNLOAD_DIR:"
+  verbose "$(ls -la "$TMP_DOWNLOAD_DIR")"
+  die "Could not find Maven distribution directory in extracted archive"
+fi
+
+verbose "Found extracted Maven distribution directory: $actualDistributionDir"
+printf %s\\n "$distributionUrl" >"$TMP_DOWNLOAD_DIR/$actualDistributionDir/mvnw.url"
+mv -- "$TMP_DOWNLOAD_DIR/$actualDistributionDir" "$MAVEN_HOME" || [ -d "$MAVEN_HOME" ] || die "fail to move MAVEN_HOME"
+
+clean || :
+exec_maven "$@"
+</file>
+
+<file path="mvnw.cmd">
+<# : batch portion
+@REM ----------------------------------------------------------------------------
+@REM Licensed to the Apache Software Foundation (ASF) under one
+@REM or more contributor license agreements.  See the NOTICE file
+@REM distributed with this work for additional information
+@REM regarding copyright ownership.  The ASF licenses this file
+@REM to you under the Apache License, Version 2.0 (the
+@REM "License"); you may not use this file except in compliance
+@REM with the License.  You may obtain a copy of the License at
+@REM
+@REM    http://www.apache.org/licenses/LICENSE-2.0
+@REM
+@REM Unless required by applicable law or agreed to in writing,
+@REM software distributed under the License is distributed on an
+@REM "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+@REM KIND, either express or implied.  See the License for the
+@REM specific language governing permissions and limitations
+@REM under the License.
+@REM ----------------------------------------------------------------------------
+
+@REM ----------------------------------------------------------------------------
+@REM Apache Maven Wrapper startup batch script, version 3.3.4
+@REM
+@REM Optional ENV vars
+@REM   MVNW_REPOURL - repo url base for downloading maven distribution
+@REM   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+@REM   MVNW_VERBOSE - true: enable verbose log; others: silence the output
+@REM ----------------------------------------------------------------------------
+
+@IF "%__MVNW_ARG0_NAME__%"=="" (SET __MVNW_ARG0_NAME__=%~nx0)
+@SET __MVNW_CMD__=
+@SET __MVNW_ERROR__=
+@SET __MVNW_PSMODULEP_SAVE=%PSModulePath%
+@SET PSModulePath=
+@FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "& {$scriptDir='%~dp0'; $script='%__MVNW_ARG0_NAME__%'; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw '%~f0'))) -NoNewScope}"`) DO @(
+  IF "%%A"=="MVN_CMD" (set __MVNW_CMD__=%%B) ELSE IF "%%B"=="" (echo %%A) ELSE (echo %%A=%%B)
+)
+@SET PSModulePath=%__MVNW_PSMODULEP_SAVE%
+@SET __MVNW_PSMODULEP_SAVE=
+@SET __MVNW_ARG0_NAME__=
+@SET MVNW_USERNAME=
+@SET MVNW_PASSWORD=
+@IF NOT "%__MVNW_CMD__%"=="" ("%__MVNW_CMD__%" %*)
+@echo Cannot start maven from wrapper >&2 && exit /b 1
+@GOTO :EOF
+: end batch / begin powershell #>
+
+$ErrorActionPreference = "Stop"
+if ($env:MVNW_VERBOSE -eq "true") {
+  $VerbosePreference = "Continue"
+}
+
+# calculate distributionUrl, requires .mvn/wrapper/maven-wrapper.properties
+$distributionUrl = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionUrl
+if (!$distributionUrl) {
+  Write-Error "cannot read distributionUrl property in $scriptDir/.mvn/wrapper/maven-wrapper.properties"
+}
+
+switch -wildcard -casesensitive ( $($distributionUrl -replace '^.*/','') ) {
+  "maven-mvnd-*" {
+    $USE_MVND = $true
+    $distributionUrl = $distributionUrl -replace '-bin\.[^.]*$',"-windows-amd64.zip"
+    $MVN_CMD = "mvnd.cmd"
+    break
+  }
+  default {
+    $USE_MVND = $false
+    $MVN_CMD = $script -replace '^mvnw','mvn'
+    break
+  }
+}
+
+# apply MVNW_REPOURL and calculate MAVEN_HOME
+# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
+if ($env:MVNW_REPOURL) {
+  $MVNW_REPO_PATTERN = if ($USE_MVND -eq $False) { "/org/apache/maven/" } else { "/maven/mvnd/" }
+  $distributionUrl = "$env:MVNW_REPOURL$MVNW_REPO_PATTERN$($distributionUrl -replace "^.*$MVNW_REPO_PATTERN",'')"
+}
+$distributionUrlName = $distributionUrl -replace '^.*/',''
+$distributionUrlNameMain = $distributionUrlName -replace '\.[^.]*$','' -replace '-bin$',''
+
+$MAVEN_M2_PATH = "$HOME/.m2"
+if ($env:MAVEN_USER_HOME) {
+  $MAVEN_M2_PATH = "$env:MAVEN_USER_HOME"
+}
+
+if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
+    New-Item -Path $MAVEN_M2_PATH -ItemType Directory | Out-Null
+}
+
+$MAVEN_WRAPPER_DISTS = $null
+if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
+  $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
+} else {
+  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
+}
+
+$MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"
+$MAVEN_HOME_NAME = ([System.Security.Cryptography.SHA256]::Create().ComputeHash([byte[]][char[]]$distributionUrl) | ForEach-Object {$_.ToString("x2")}) -join ''
+$MAVEN_HOME = "$MAVEN_HOME_PARENT/$MAVEN_HOME_NAME"
+
+if (Test-Path -Path "$MAVEN_HOME" -PathType Container) {
+  Write-Verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+  Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+  exit $?
+}
+
+if (! $distributionUrlNameMain -or ($distributionUrlName -eq $distributionUrlNameMain)) {
+  Write-Error "distributionUrl is not valid, must end with *-bin.zip, but found $distributionUrl"
+}
+
+# prepare tmp dir
+$TMP_DOWNLOAD_DIR_HOLDER = New-TemporaryFile
+$TMP_DOWNLOAD_DIR = New-Item -Itemtype Directory -Path "$TMP_DOWNLOAD_DIR_HOLDER.dir"
+$TMP_DOWNLOAD_DIR_HOLDER.Delete() | Out-Null
+trap {
+  if ($TMP_DOWNLOAD_DIR.Exists) {
+    try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+    catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+  }
+}
+
+New-Item -Itemtype Directory -Path "$MAVEN_HOME_PARENT" -Force | Out-Null
+
+# Download and Install Apache Maven
+Write-Verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+Write-Verbose "Downloading from: $distributionUrl"
+Write-Verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+
+$webclient = New-Object System.Net.WebClient
+if ($env:MVNW_USERNAME -and $env:MVNW_PASSWORD) {
+  $webclient.Credentials = New-Object System.Net.NetworkCredential($env:MVNW_USERNAME, $env:MVNW_PASSWORD)
+}
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$webclient.DownloadFile($distributionUrl, "$TMP_DOWNLOAD_DIR/$distributionUrlName") | Out-Null
+
+# If specified, validate the SHA-256 sum of the Maven distribution zip file
+$distributionSha256Sum = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionSha256Sum
+if ($distributionSha256Sum) {
+  if ($USE_MVND) {
+    Write-Error "Checksum validation is not supported for maven-mvnd. `nPlease disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties."
+  }
+  Import-Module $PSHOME\Modules\Microsoft.PowerShell.Utility -Function Get-FileHash
+  if ((Get-FileHash "$TMP_DOWNLOAD_DIR/$distributionUrlName" -Algorithm SHA256).Hash.ToLower() -ne $distributionSha256Sum) {
+    Write-Error "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised. If you updated your Maven version, you need to update the specified distributionSha256Sum property."
+  }
+}
+
+# unzip and move
+Expand-Archive "$TMP_DOWNLOAD_DIR/$distributionUrlName" -DestinationPath "$TMP_DOWNLOAD_DIR" | Out-Null
+
+# Find the actual extracted directory name (handles snapshots where filename != directory name)
+$actualDistributionDir = ""
+
+# First try the expected directory name (for regular distributions)
+$expectedPath = Join-Path "$TMP_DOWNLOAD_DIR" "$distributionUrlNameMain"
+$expectedMvnPath = Join-Path "$expectedPath" "bin/$MVN_CMD"
+if ((Test-Path -Path $expectedPath -PathType Container) -and (Test-Path -Path $expectedMvnPath -PathType Leaf)) {
+  $actualDistributionDir = $distributionUrlNameMain
+}
+
+# If not found, search for any directory with the Maven executable (for snapshots)
+if (!$actualDistributionDir) {
+  Get-ChildItem -Path "$TMP_DOWNLOAD_DIR" -Directory | ForEach-Object {
+    $testPath = Join-Path $_.FullName "bin/$MVN_CMD"
+    if (Test-Path -Path $testPath -PathType Leaf) {
+      $actualDistributionDir = $_.Name
+    }
+  }
+}
+
+if (!$actualDistributionDir) {
+  Write-Error "Could not find Maven distribution directory in extracted archive"
+}
+
+Write-Verbose "Found extracted Maven distribution directory: $actualDistributionDir"
+Rename-Item -Path "$TMP_DOWNLOAD_DIR/$actualDistributionDir" -NewName $MAVEN_HOME_NAME | Out-Null
+try {
+  Move-Item -Path "$TMP_DOWNLOAD_DIR/$MAVEN_HOME_NAME" -Destination $MAVEN_HOME_PARENT | Out-Null
+} catch {
+  if (! (Test-Path -Path "$MAVEN_HOME" -PathType Container)) {
+    Write-Error "fail to move MAVEN_HOME"
+  }
+} finally {
+  try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+  catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+}
+
+Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+</file>
+
+<file path="README.md">
+<div align="center">
+
+# HoneyMoney
+
+### Expense Tracker API
+
+API REST para la gestión de gastos personales con autenticación basada en JWT.
+Diseñada con foco en seguridad, claridad de contratos y buenas prácticas REST.
+
+![Java](https://img.shields.io/badge/Java_17-ED8B00?style=plastic&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=plastic&logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=plastic&logo=springsecurity&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=plastic&logo=jsonwebtokens&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-C71A36?style=plastic&logo=apachemaven&logoColor=white)
+
+</div>
+
+---
+
+## ¿Por qué existe este proyecto?
+
+Este proyecto fue construido para aplicar conceptos clave de backend:
+
+| Concepto | Aplicación en el proyecto |
+|---|---|
+| Diseño de APIs REST | Recursos, verbos y códigos de estado consistentes |
+| Autenticación y autorización | JWT con rutas protegidas |
+| Manejo de errores | Formato de error unificado |
+| Modelado de dominio | Entidades y relaciones claras |
+| Validación de datos | Reglas de negocio en capa de servicio |
+
+---
+
+## Requisitos
+
+Antes de ejecutar el proyecto, asegúrate de tener instalado:
+
+- JDK 17
+- Maven 3.x
+
+---
+
+## Quick Start
+
+```bash
+git clone https://github.com/CamilaTorres1035/honeymoney
+cd honeymoney
+mvn spring-boot:run
+```
+
+**Servidor disponible en:**
+
+```
+http://localhost:8080
+```
+
+---
+
+## Autenticación
+
+La API utiliza **JWT (JSON Web Tokens)** para proteger sus rutas.
+
+### Flujo de autenticación
+
+1. Registrar usuario en `POST /api/auth/register`
+2. Iniciar sesión en `POST /api/auth/login`
+3. Usar el token recibido en cada request protegido:
+
+```
+Authorization: Bearer <token>
+```
+
+---
+
+## Features
+
+- Registro y login de usuarios
+- Autenticación con JWT
+- CRUD completo de gastos
+- Filtros por fecha (última semana, mes, rango personalizado)
+- Aislamiento por usuario (multi-user seguro)
+
+---
+
+## Tech Stack
+
+| Categoría | Tecnología |
+|---|---|
+| Lenguaje | Java 17 |
+| Framework | Spring Boot |
+| Seguridad | Spring Security |
+| Autenticación | JWT |
+| Base de datos | H2 (in-memory) |
+| Build tool | Maven |
+
+---
+
+## Endpoints disponibles
+
+### Auth
+
+| Método | Endpoint |
+|---|---|
+| `POST` | `/api/auth/register` |
+| `POST` | `/api/auth/login` |
+
+### Expenses
+
+| Método | Endpoint |
+|---|---|
+| `GET` | `/api/expenses` |
+| `POST` | `/api/expenses` |
+| `GET` | `/api/expenses/{id}` |
+| `PATCH` | `/api/expenses/{id}` |
+| `DELETE` | `/api/expenses/{id}` |
+
+#### Filtros soportados
+
+| Parámetro | Valores / Formato |
+|---|---|
+| `range` | `last_week` \| `last_month` \| `last_3_months` |
+| `startDate` / `endDate` | `YYYY-MM-DD` |
+
+**Ejemplos:**
+
+```http
+GET /api/expenses?range=last_week
+GET /api/expenses?startDate=2026-06-01&endDate=2026-07-04
+```
+
+> **Nota:** todas las fechas deben enviarse en formato estándar `YYYY-MM-DD`.
+
+---
+
+## Consideraciones
+
+- Todos los endpoints de gastos requieren autenticación
+- No se expone información sobre recursos de otros usuarios
+- Base de datos en memoria (no persistente para desarrollo)
+- Formato de fechas: `YYYY-MM-DD`
+
+---
+
+## Documentación completa
+
+Toda la definición de la API, contratos, catálogo de errores y reglas de negocio:
+
+**Ver documentación completa:** [`/docs/api-spec.md`](/docs/api-spec.md)
+
+---
+
+## Testing
+
+```bash
+mvn test
+```
+
+---
+
+## Roadmap
+
+- [ ] Migrar a base de datos persistente
+- [ ] Paginación en listados
+- [ ] Filtro por categoría
+- [ ] Refresh tokens (mejorar expiración de JWT)
+- [ ] Dockerización
+- [ ] Deploy
+
+---
+
+## Lecciones aplicadas
+
+- Separación de responsabilidades por capas (Controller / Service / Security)
+- Manejo de autenticación stateless
+- Validación de inputs
+- Diseño de APIs centradas en el usuario
+
+---
+
+## Autor
+
+<div align="center">
+
+**Camila Torres**
+
+[![GitHub](https://img.shields.io/badge/GitHub-CamilaTorres1035-181717?style=plastic&logo=github&logoColor=white)](https://github.com/CamilaTorres1035)
+
+</div>
+</file>
+
+<file path="docs/api-spec.md">
+# HoneyMoney – Expense Tracker API (V1)
+
+Creado: 28 de junio de 2026 10:25
+Etiquetas: APIs, Spring Boot
+
+## Descripción
+
+**HoneyMoney** es una API REST desarrollada con Spring Boot que permite a los usuarios gestionar sus gastos personales de manera segura y eficiente. En primera fase, la aplicación utilizará **H2 en modo in-memory** en lugar de una base de datos persistente, con el fin de para enfocarse en la lógica de negocio, autenticación y diseño de la API.
+
+---
+
+## Objetivo
+
+Aplicar conceptos aprendidos para construir una API que permita a los usuarios registrar, consultar, actualizar y eliminar sus gastos, con autenticación basada en JWT para proteger los endpoints.
+
+---
+
+## Funcionalidades
+
+### Autenticación y usuarios
+
+- Registro de usuarios.
+- Login con emisión de JWT.
+- Validación de JWT para proteger los endpoints (mediante un middleware de seguridad en cada petición protegida).
+- Identificación del usuario autenticado en cada petición a un endpoint protegido, a partir del JWT.
+
+---
+
+### Gestión de gastos
+
+#### Crear gasto
+
+- Permitir registrar un nuevo gasto asociado al usuario autenticado con:
+    - Monto
+    - Categoría
+    - Descripción (opcional)
+    - Fecha
+
+#### Consultar un gasto específico
+
+- Obtener un gasto específico del usuario autenticado.
+
+#### Listar gastos
+
+- Obtener todos los gastos del usuario autenticado.
+
+#### Filtrar gastos
+
+Permitir filtrar los gastos por rango de fechas:
+
+- Última semana
+- Último mes
+- Últimos 3 meses
+- Rango personalizado (`startDate` y `endDate`)
+
+#### Actualizar gasto
+
+- Modificar un gasto existente, todos los campos son actualizables, exceptuando el id y el usuario propietario.
+
+#### Eliminar gasto
+
+- Eliminar un gasto existente.
+
+---
+
+## Categorías de gastos
+
+El sistema maneja las siguientes categorías predefinidas:
+
+- Groceries
+- Leisure
+- Electronics
+- Utilities
+- Clothing
+- Health
+- Others
+
+> Nota: en esta fase, las categorías se mantienen como un conjunto fijo utilizado internamente para validar los gastos creados/actualizados. No se expone un endpoint para consultarlas (`GET /api/categories` queda **fuera de alcance** en esta fase).
+> 
+
+---
+
+## Restricciones técnicas
+
+- JWT obligatorio para todos los endpoints protegidos, excepto `POST /api/auth/register` y `POST /api/auth/login`.
+- Almacenamiento mediante H2 en modo in-memory (sin persistencia entre reinicios de la aplicación).
+- Formato de fecha estándar para toda la API: `AAAA-MM-DD` (ISO 8601, ej. `2026-07-04`).
+- Todo listado y filtrado de gastos (`GET /api/expenses` y sus variantes) debe estar acotado automáticamente al usuario autenticado identificado por el JWT.
+- Paginación: **fuera de alcance** en esta fase.
+- Filtro por categoría: **fuera de alcance** en esta fase (posible extensión futura).
+
+---
+
+## Modelo de Dominio
+
+![image.png](image.png)
+
+---
+
+## Diseño de Endpoints
+
+| Método | Endpoint | Función |
+| --- | --- | --- |
+| POST | /api/auth/register | Registro de usuarios |
+| POST | /api/auth/login | Login de usuarios |
+| POST | /api/expenses | Crear gasto |
+| GET | /api/expenses/{id} | Obtener gasto especifico |
+| GET | /api/expenses | Listar gastos del usuario autenticado |
+| GET | /api/expenses?range=last_week | Filtrar por última semana |
+| GET | /api/expenses?range=last_month | Filtrar por último mes |
+| GET | /api/expenses?range=last_3_months | Filtrar por últimos 3 meses |
+| GET | /api/expenses?startDate=2026-06-01&endDate=2026-07-04 | Filtrar por rango personalizado |
+| PATCH | /api/expenses/{id} | Actualizar gasto |
+| DELETE | /api/expenses/{id} | Eliminar gasto |
+
+---
+
+## Contratos de request-response (DTOs)
+
+### Registro de Usuarios (`POST /api/auth/register`)
+
+#### Request Body
+
+```json
+{
+  "name": "Carlos Mendoza",
+  "email": "carlos@example.com",
+  "password": "PasswordSegura123!"
+}
+```
+
+#### Response Body (201 Created)
+
+```json
+{
+  "id": 1,
+  "name": "Carlos Mendoza",
+  "email": "carlos@example.com",
+  "createdAt": "2026-07-04T16:06:00Z"
+}
+```
+
+### Login de usuarios (**`POST /api/auth/login`**)
+
+#### Request Body
+
+```json
+{
+  "email": "carlos@example.com",
+  "password": "PasswordSegura123!"
+}
+```
+
+#### Resonse Body (200 OK)
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "name": "Carlos Mendoza",
+    "email": "carlos@example.com"
+  }
+}
+```
+
+### Crear gasto (**`POST /api/expenses`**)
+
+#### Request Body
+
+```json
+{
+  "amount": 45.50,
+  "category": "Groceries",
+  "description": "Cena de negocios",
+  "expenseDate": "2026-07-03"
+}
+```
+
+#### Response Body (201 Created)
+
+```json
+{
+  "id": 1,
+  "amount": 45.50,
+  "category": "Groceries",
+  "description": "Cena de negocios",
+  "expenseDate": "2026-07-03",
+  "createdAt": "2026-07-04T16:06:00Z",
+  "updatedAt": "2026-07-04T16:06:00Z"
+}
+```
+
+### Obtener gasto específico (`GET /api/expenses/{id}`)
+
+#### Response Body (200 OK)
+
+```json
+{
+  "id": 1,
+  "amount": 45.50,
+  "category": "Groceries",
+  "description": "Cena de negocios",
+  "expenseDate": "2026-07-03",
+  "createdAt": "2026-07-04T16:06:00Z",
+  "updatedAt": "2026-07-04T16:06:00Z"
+}
+```
+
+### Listar / Filtrar gastos (**`GET /api/expenses`**)
+
+*Aplica para listar todos, rangos predefinidos (`range`) y personalizados (`startDate`/`endDate`).*
+
+#### Response Body (200 OK) - ejemplo con `*range*`
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "amount": 45.50,
+      "category": "Groceries",
+      "description": "Cena de negocios",
+      "expenseDate": "2026-07-03",
+      "createdAt": "2026-07-04T16:06:00Z",
+      "updatedAt": "2026-07-04T16:06:00Z"
+    },
+    {
+      "id": 2,
+      "amount": 12.00,
+      "category": "Leisure",
+      "description": "Uber al trabajo",
+      "expenseDate": "2026-06-28",
+      "createdAt": "2026-06-28T09:15:00Z",
+      "updatedAt": "2026-06-28T09:15:00Z"
+    }
+  ],
+  "meta": {
+    "totalCount": 2,
+    "appliedFilters": {
+      "range": "last_week",
+      "startDate": null,
+      "endDate": null
+    }
+  }
+}
+```
+
+#### Response Body (200 OK) - ejemplo con rango personalizado
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "amount": 45.50,
+      "category": "Groceries",
+      "description": "Cena de negocios",
+      "expenseDate": "2026-07-03",
+      "createdAt": "2026-07-04T16:06:00Z",
+      "updatedAt": "2026-07-04T16:06:00Z"
+    }
+  ],
+  "meta": {
+    "totalCount": 1,
+    "appliedFilters": {
+      "range": null,
+      "startDate": "2026-06-01",
+      "endDate": "2026-07-04"
+    }
+  }
+}
+```
+
+### Actualizar gasto (**`PATCH /api/expenses/{id}`**)
+
+#### Request Body
+
+```json
+// Solo Campos a Modificar
+{
+  "amount": 50.00,
+  "description": "Cena de negocios (Ajuste de propina)"
+}
+```
+
+#### Response Body (200 OK)
+
+```json
+{
+  "id": 1,
+  "amount": 50.00,
+  "category": "Groceries",
+  "description": "Cena de negocios (Ajuste de propina)",
+  "expenseDate": "2026-07-03",
+  "createdAt": "2026-07-04T16:06:00Z",
+  "updatedAt": "2026-07-04T16:10:00Z"
+}
+```
+
+### Eliminar gasto (**`DELETE /api/expenses/{id}`**)
+
+#### Response Body (204 No Content)
+
+> Se elige `204 No Content` sin cuerpo, en lugar de `200 OK` con JSON, por ser la convención REST más extendida para operaciones DELETE exitosas (el recurso ya no existe, por lo que no hay nada que devolver).
+> 
+
+---
+
+## Catálogo de errores
+
+#### `POST /api/auth/register`
+
+| Código | Caso |
+| --- | --- |
+| 400 Bad Request | Campos faltantes, email con formato inválido, password que no cumple política mínima |
+| 409 Conflict | El email ya está registrado |
+
+#### `POST /api/auth/login`
+
+| Código | Caso |
+| --- | --- |
+| 400 Bad Request | Campos faltantes (email o password vacíos) |
+| 401 Unauthorized | Credenciales inválidas (email no existe o password incorrecto — mismo mensaje genérico para no revelar cuál de los dos falló) |
+
+#### Todos los endpoints bajo `/api/expenses/**` (regla transversal)
+
+| Código | Caso |
+| --- | --- |
+| 401 Unauthorized | Token ausente, inválido, malformado o expirado |
+
+#### `POST /api/expenses`
+
+| Código | Caso |
+| --- | --- |
+| 400 Bad Request | `amount` ausente, negativo o cero; `category` no corresponde a un valor del enum; `expenseDate` con formato distinto a `AAAA-MM-DD`; campos obligatorios faltantes |
+
+#### `GET /api/expenses/{id}`
+
+| Código | Caso |
+| --- | --- |
+| 404 Not Found | El gasto no existe, o existe pero pertenece a otro usuario (ver Decisión 2) |
+
+#### `GET /api/expenses` (listado y filtros)
+
+| Código | Caso |
+| --- | --- |
+| 400 Bad Request | Se envían simultáneamente `range` y (`startDate`/`endDate`) — regla ya definida |
+| 400 Bad Request | Valor de `range` no reconocido (distinto de `last_week`, `last_month`, `last_3_months`) |
+| 400 Bad Request | `startDate` o `endDate` con formato distinto a `AAAA-MM-DD` |
+| 400 Bad Request | `startDate` posterior a `endDate` |
+
+#### `PATCH /api/expenses/{id}`
+
+| Código | Caso |
+| --- | --- |
+| 400 Bad Request | Algún campo enviado no cumple validación (`amount` ≤ 0, `category` inválida, `expenseDate` con formato incorrecto) |
+| 404 Not Found | El gasto no existe o pertenece a otro usuario |
+
+#### `DELETE /api/expenses/{id}`
+
+| Código | Caso |
+| --- | --- |
+| 404 Not Found | El gasto no existe o pertenece a otro usuario |
+
+#### Transversal a toda la API
+
+| Código | Caso |
+| --- | --- |
+| 500 Internal Server Error | Error no controlado del servidor (fallback genérico, sin exponer detalles internos en `message`) |
+
+---
+
+## Reglas de negocio
+
+### Regla de exclusión de filtros
+
+`startDate`/`endDate` no pueden combinarse en la misma petición: si se reciben simultáneamente `range` y (`startDate` o `endDate`), la API responde `400 Bad Request` indicando que los parámetros son mutuamente excluyentes.
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/controller/AuthController.java">
+package com.camss.honeymoney.controller;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.camss.honeymoney.dto.LoginRequest;
+import com.camss.honeymoney.dto.LoginResponse;
+import com.camss.honeymoney.dto.RegisterRequest;
+import com.camss.honeymoney.dto.RegisterResponse;
+import com.camss.honeymoney.service.AuthService;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+    private final AuthService authService;
+
+    AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponse> signUp(@Valid @RequestBody RegisterRequest request) {
+        RegisterResponse response = authService.signUp(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authService.authenticate(request);
+        return ResponseEntity.ok(response);
+    }
+    
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/dto/ExpenseListResponse.java">
+package com.camss.honeymoney.dto;
+
+import java.util.List;
+import java.util.Map;
+
+public record ExpenseListResponse(
+    List<ExpenseResponse> data,
+    Meta meta
+) {
+    public record Meta(
+        long totalCount,
+        int totalPages,
+        int currentPage,
+        int pageSize,
+        boolean isLast,
+        Map<String, Object> appliedFilters
+    ) {}
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/dto/LoginResponse.java">
+package com.camss.honeymoney.dto;
+
+public record LoginResponse(
+    String token,
+    UserSummary user
+) {
+    public record UserSummary(
+        Long id,
+        String name,
+        String email
+    ) {}
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/model/Expense.java">
+package com.camss.honeymoney.model;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "expenses")
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
+public class Expense {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(precision = 12, scale = 2, nullable = false)
+    private BigDecimal amount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Category category;
+
+    private String description;
+
+    @Column(nullable = false)
+    private LocalDate expenseDate;
+
+    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP")
+    private Instant createdAt;
+
+    @Column(nullable = false, columnDefinition = "TIMESTAMP")
+    private Instant updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/repository/UserRepository.java">
+package com.camss.honeymoney.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.camss.honeymoney.model.User;
+
+public interface UserRepository extends JpaRepository<User, Long>{
+    Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/service/AuthService.java">
+package com.camss.honeymoney.service;
+
+import java.time.Instant;
+import java.util.Collections;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.camss.honeymoney.dto.LoginRequest;
+import com.camss.honeymoney.dto.LoginResponse;
+import com.camss.honeymoney.dto.RegisterRequest;
+import com.camss.honeymoney.dto.RegisterResponse;
+import com.camss.honeymoney.exception.DuplicatedEmailException;
+import com.camss.honeymoney.model.User;
+import com.camss.honeymoney.repository.UserRepository;
+import com.camss.honeymoney.security.JwtService;
+
+@Service
+public class AuthService {
+    private final JwtService jwtService;
+
+    private final UserRepository userRepository;
+
+    private final PasswordEncoder passwordEncoder;
+
+    private final AuthenticationManager authenticationManager;
+
+    AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
+    }
+
+    public RegisterResponse signUp(RegisterRequest request){
+        if (userRepository.existsByEmail(request.email()) ) {throw new DuplicatedEmailException("El email ya está registrado: " + request.email());}
+        User user = new User();
+        user.setName(request.name());
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setCreatedAt(Instant.now());
+
+        User savedUser = userRepository.save(user);
+
+        return new RegisterResponse(savedUser.getId(), savedUser.getName(), savedUser.getEmail(), savedUser.getCreatedAt());
+    }
+
+    public LoginResponse authenticate(LoginRequest request){
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+
+        User user = userRepository.findByEmail(request.email()).orElseThrow();
+
+        var principal = new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), Collections.emptyList());
+
+        String token = jwtService.generateToken(principal);
+
+        return new LoginResponse(token, new LoginResponse.UserSummary(user.getId(), user.getName(), user.getEmail()));
+    }
+}
+</file>
+
+<file path="src/test/java/com/camss/honeymoney/controller/ExpenseControllerTest.java">
+package com.camss.honeymoney.controller;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.camss.honeymoney.dto.ExpenseListResponse;
+import com.camss.honeymoney.dto.ExpenseResponse;
+import com.camss.honeymoney.exception.InvalidFilterException;
+import com.camss.honeymoney.exception.ResourceNotFoundException;
+import com.camss.honeymoney.model.Category;
+import com.camss.honeymoney.model.User;
+import com.camss.honeymoney.repository.UserRepository;
+import com.camss.honeymoney.security.JwtService;
+import com.camss.honeymoney.service.ExpenseService;
+
+/**
+ * Tests de integración de ExpenseController.
+ * Se usa el contexto completo de Spring (SecurityConfig, JwtAuthenticationFilter,
+ * GlobalExceptionHandler reales) mockeando solo la capa de servicio y el repositorio
+ * de usuarios (usado internamente por UserDetailsServiceImpl para validar el JWT).
+ */
+@SpringBootTest(properties = {
+        "spring.datasource.url=jdbc:h2:mem:honeymoney-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.hibernate.ddl-auto=update"
+})
+@AutoConfigureMockMvc
+class ExpenseControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @MockitoBean
+    private ExpenseService expenseService;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    private final String email = "test@example.com";
+    private String token;
+    private ExpenseResponse sampleResponse;
+
+    @BeforeEach
+    void setUp() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail(email);
+        user.setPassword("hashedPassword");
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+
+        UserDetails principal = new org.springframework.security.core.userdetails.User(
+                email, "hashedPassword", Collections.emptyList());
+        token = jwtService.generateToken(principal);
+
+        sampleResponse = new ExpenseResponse(
+                1L, new BigDecimal("45.50"), Category.Groceries, "Cena de negocios",
+                LocalDate.of(2026, 7, 3), Instant.now(), Instant.now());
+    }
+
+    // ---------------------------------------------------------------
+    // Autenticación
+    // ---------------------------------------------------------------
+
+    @Test
+    void getExpenses_WithoutToken_ShouldReturn401() throws Exception {
+        mockMvc.perform(get("/api/expenses"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getExpenses_WithMalformedToken_ShouldReturn401() throws Exception {
+        mockMvc.perform(get("/api/expenses").header("Authorization", "Bearer token.invalido.aca"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ---------------------------------------------------------------
+    // Crear gasto
+    // ---------------------------------------------------------------
+
+    @Test
+    void createExpense_WithValidBodyAndToken_ShouldReturn201() throws Exception {
+        when(expenseService.create(any(), eq(email))).thenReturn(sampleResponse);
+
+        String body = """
+                {
+                  "amount": 45.50,
+                  "category": "Groceries",
+                  "description": "Cena de negocios",
+                  "expenseDate": "2026-07-03"
+                }
+                """;
+
+        mockMvc.perform(post("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.amount").value(45.50))
+                .andExpect(jsonPath("$.category").value("Groceries"));
+    }
+
+    @Test
+    void createExpense_WithNegativeAmount_ShouldReturn400WithValidationDetails() throws Exception {
+        String body = """
+                {
+                  "amount": -10,
+                  "category": "Groceries",
+                  "expenseDate": "2026-07-03"
+                }
+                """;
+
+        mockMvc.perform(post("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.details[0].field").value("amount"));
+    }
+
+    @Test
+    void createExpense_WithMissingCategory_ShouldReturn400() throws Exception {
+        String body = """
+                {
+                  "amount": 10,
+                  "expenseDate": "2026-07-03"
+                }
+                """;
+
+        mockMvc.perform(post("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---------------------------------------------------------------
+    // Obtener gasto específico
+    // ---------------------------------------------------------------
+
+    @Test
+    void getExpenseById_WhenExists_ShouldReturn200() throws Exception {
+        when(expenseService.findById(1L, email)).thenReturn(sampleResponse);
+
+        mockMvc.perform(get("/api/expenses/1").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    void getExpenseById_WhenNotFoundOrNotOwned_ShouldReturn404() throws Exception {
+        when(expenseService.findById(99L, email))
+                .thenThrow(new ResourceNotFoundException("Gasto no encontrado o no autorizado"));
+
+        mockMvc.perform(get("/api/expenses/99").header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    // ---------------------------------------------------------------
+    // Listado y filtros
+    // ---------------------------------------------------------------
+
+    @Test
+    void getExpenses_WithoutFilters_ShouldCallFindAll() throws Exception {
+        ExpenseListResponse listResponse = new ExpenseListResponse(
+                List.of(sampleResponse), new ExpenseListResponse.Meta(1, 1, 0, 10, true, Map.of()));
+        when(expenseService.findAll(eq(email), any(Pageable.class))).thenReturn(listResponse);
+
+        mockMvc.perform(get("/api/expenses").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.meta.totalCount").value(1));
+    }
+
+    @Test
+    void getExpenses_WithRangeFilter_ShouldCallFilterExpenses() throws Exception {
+        ExpenseListResponse listResponse = new ExpenseListResponse(
+                List.of(sampleResponse), new ExpenseListResponse.Meta(1, 1, 0, 10, true, Map.of("range", "last_week")));
+        when(expenseService.filterExpenses(eq(email), eq("last_week"), eq(null), eq(null),any(), any(Pageable.class)))
+                .thenReturn(listResponse);
+
+        mockMvc.perform(get("/api/expenses?range=last_week").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.meta.appliedFilters.range").value("last_week"));
+    }
+
+    @Test
+    void getExpenses_WhenServiceThrowsInvalidFilterException_ShouldReturn400() throws Exception {
+        // Simula la regla de exclusión mutua evaluada en el service
+        when(expenseService.filterExpenses(anyString(), eq("last_week"), any(),any(), any(), any(Pageable.class)))
+                .thenThrow(new InvalidFilterException(
+                        "Los parámetros 'range' y 'startDate'/'endDate' son mutuamente excluyentes. Use solo uno de los dos."));
+
+        mockMvc.perform(get("/api/expenses?range=last_week&startDate=2026-06-01")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("mutuamente excluyentes")));
+    }
+
+    @Test
+    void getExpenses_WithMalformedDateFormat_ShouldReturn400() throws Exception {
+        // startDate con formato inválido (dd-MM-yyyy en vez de yyyy-MM-dd): falla en el
+        // binding del parámetro, antes de llegar al service. Cubre el fix de
+        // MethodArgumentTypeMismatchException en GlobalExceptionHandler.
+        mockMvc.perform(get("/api/expenses?startDate=04-07-2026&endDate=2026-07-10")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("startDate")));
+    }
+
+    // ---------------------------------------------------------------
+    // Actualizar gasto
+    // ---------------------------------------------------------------
+
+    @Test
+    void updateExpense_WithValidPartialBody_ShouldReturn200() throws Exception {
+        ExpenseResponse updated = new ExpenseResponse(
+                1L, new BigDecimal("50.00"), Category.Groceries, "Ajuste de propina",
+                LocalDate.of(2026, 7, 3), Instant.now(), Instant.now());
+        when(expenseService.update(eq(1L), any(), eq(email))).thenReturn(updated);
+
+        String body = """
+                {
+                  "amount": 50.00,
+                  "description": "Ajuste de propina"
+                }
+                """;
+
+        mockMvc.perform(patch("/api/expenses/1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.amount").value(50.00));
+    }
+
+    @Test
+    void updateExpense_WhenNotFound_ShouldReturn404() throws Exception {
+        when(expenseService.update(eq(99L), any(), eq(email)))
+                .thenThrow(new ResourceNotFoundException("Gasto no encontrado o no autorizado"));
+
+        mockMvc.perform(patch("/api/expenses/99")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isNotFound());
+    }
+
+    // ---------------------------------------------------------------
+    // Eliminar gasto
+    // ---------------------------------------------------------------
+
+    @Test
+    void deleteExpense_WhenExists_ShouldReturn204() throws Exception {
+        mockMvc.perform(delete("/api/expenses/1").header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deleteExpense_WithoutToken_ShouldReturn401() throws Exception {
+        mockMvc.perform(delete("/api/expenses/1"))
+                .andExpect(status().isUnauthorized());
+    }
+}
+</file>
+
+<file path="src/test/java/com/camss/honeymoney/service/AuthServiceTest.java">
+package com.camss.honeymoney.service;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.time.Instant;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.camss.honeymoney.dto.LoginRequest;
+import com.camss.honeymoney.dto.LoginResponse;
+import com.camss.honeymoney.dto.RegisterRequest;
+import com.camss.honeymoney.dto.RegisterResponse;
+import com.camss.honeymoney.exception.DuplicatedEmailException;
+import com.camss.honeymoney.model.User;
+import com.camss.honeymoney.repository.UserRepository;
+import com.camss.honeymoney.security.JwtService;
+
+@ExtendWith(MockitoExtension.class)
+class AuthServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private AuthenticationManager authenticationManager;
+
+    @Mock
+    private JwtService jwtService;
+
+    @InjectMocks
+    private AuthService authService;
+
+    private RegisterRequest registerRequest;
+    private User userMock;
+
+    @BeforeEach
+    void setUp() {
+        registerRequest = new RegisterRequest("Juan", "juan@example.com", "password123");
+        
+        userMock = new User();
+        userMock.setId(1L);
+        userMock.setName("Juan");
+        userMock.setEmail("juan@example.com");
+        userMock.setPassword("encodedPassword");
+        userMock.setCreatedAt(Instant.now());
+    }
+
+    @Test
+    void signUp_WhenEmailDoesNotExist_ShouldRegisterUserSuccessfully() {
+        // Arrange
+        when(userRepository.existsByEmail(registerRequest.email())).thenReturn(false);
+        when(passwordEncoder.encode(registerRequest.password())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(userMock);
+
+        // Act
+        RegisterResponse response = authService.signUp(registerRequest);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(userMock.getId(), response.id());
+        assertEquals(userMock.getName(), response.name());
+        assertEquals(userMock.getEmail(), response.email());
+        
+        verify(userRepository, times(1)).existsByEmail(registerRequest.email());
+        verify(passwordEncoder, times(1)).encode(registerRequest.password());
+        verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    void signUp_WhenEmailAlreadyExists_ShouldThrowDuplicatedEmailException() {
+        // Arrange
+        when(userRepository.existsByEmail(registerRequest.email())).thenReturn(true);
+
+        // Act & Assert
+        DuplicatedEmailException exception = assertThrows(DuplicatedEmailException.class, () -> {
+            authService.signUp(registerRequest);
+        });
+
+        assertEquals("El email ya está registrado: " + registerRequest.email(), exception.getMessage());
+        
+        // Verificar que no se llamó a codificar clave ni a guardar
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void authenticate_WhenCredentialsAreValid_ShouldReturnLoginResponse() {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest("juan@example.com", "password123");
+        String mockToken = "eyJhbGciOiJIUzI1NiJ9.mockToken";
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(null);
+        when(userRepository.findByEmail(loginRequest.email())).thenReturn(Optional.of(userMock));
+        when(jwtService.generateToken(any(UserDetails.class))).thenReturn(mockToken);
+
+        // Act
+        LoginResponse response = authService.authenticate(loginRequest);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(mockToken, response.token());
+        assertEquals(userMock.getId(), response.user().id());
+        assertEquals(userMock.getName(), response.user().name());
+        assertEquals(userMock.getEmail(), response.user().email());
+
+        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(userRepository, times(1)).findByEmail(loginRequest.email());
+        verify(jwtService, times(1)).generateToken(any(UserDetails.class));
+    }
+}
+</file>
+
+<file path="src/test/java/com/camss/honeymoney/service/ExpenseServiceTest.java">
+package com.camss.honeymoney.service;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import com.camss.honeymoney.dto.ExpenseListResponse;
+import com.camss.honeymoney.dto.ExpenseRequest;
+import com.camss.honeymoney.dto.ExpenseResponse;
+import com.camss.honeymoney.dto.ExpenseUpdateRequest;
+import com.camss.honeymoney.exception.InvalidFilterException;
+import com.camss.honeymoney.exception.ResourceNotFoundException;
+import com.camss.honeymoney.model.Category;
+import com.camss.honeymoney.model.Expense;
+import com.camss.honeymoney.model.User;
+import com.camss.honeymoney.repository.ExpenseRepository;
+import com.camss.honeymoney.repository.UserRepository;
+
+@ExtendWith(MockitoExtension.class)
+public class ExpenseServiceTest {
+
+    @Mock
+    private ExpenseRepository expenseRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private ExpenseService expenseService;
+
+    private User sampleUser;
+    private Expense sampleExpense;
+    private Pageable pageable;
+    private final String email = "test@example.com";
+    private final Long expenseId = 1L;
+
+    @BeforeEach
+    void setUp() {
+        sampleUser = new User();
+        sampleUser.setEmail(email);
+
+        sampleExpense = new Expense();
+        sampleExpense.setId(expenseId);
+        sampleExpense.setAmount(new BigDecimal("100.0"));
+        sampleExpense.setCategory(Category.Groceries);
+        sampleExpense.setDescription("Lunch");
+        sampleExpense.setUser(sampleUser);
+
+        pageable = PageRequest.of(0, 10);
+    }
+
+    @Test
+    void create_WhenUserExists_ShouldReturnExpenseResponse() {
+        ExpenseRequest request = mock(ExpenseRequest.class);
+        when(request.toEntity()).thenReturn(new Expense());
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(sampleUser));
+        when(expenseRepository.save(any(Expense.class))).thenReturn(sampleExpense);
+
+        ExpenseResponse response = expenseService.create(request, email);
+
+        assertNotNull(response);
+        verify(expenseRepository, times(1)).save(any(Expense.class));
+    }
+
+    @Test
+    void create_WhenUserDoesNotExist_ShouldThrowUsernameNotFoundException() {
+        ExpenseRequest request = mock(ExpenseRequest.class);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+        assertThrows(UsernameNotFoundException.class, () -> expenseService.create(request, email));
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
+    void update_WhenExpenseExists_ShouldUpdateFieldsAndReturnResponse() {
+        ExpenseUpdateRequest request = new ExpenseUpdateRequest(new BigDecimal("150.0"), Category.Utilities, "Taxi", LocalDate.now());
+
+        when(expenseRepository.findByIdAndUserEmail(expenseId, email)).thenReturn(Optional.of(sampleExpense));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ExpenseResponse response = expenseService.update(expenseId, request, email);
+
+        assertNotNull(response);
+        assertEquals(new BigDecimal("150.0"), sampleExpense.getAmount());
+        assertEquals(Category.Utilities, sampleExpense.getCategory());
+    }
+
+    @Test
+    void update_WhenExpenseDoesNotExist_ShouldThrowResourceNotFoundException() {
+        ExpenseUpdateRequest request = new ExpenseUpdateRequest(null, null, null, null);
+        when(expenseRepository.findByIdAndUserEmail(expenseId, email)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.update(expenseId, request, email));
+    }
+
+    @Test
+    void findById_WhenExpenseExists_ShouldReturnExpenseResponse() {
+        when(expenseRepository.findByIdAndUserEmail(expenseId, email)).thenReturn(Optional.of(sampleExpense));
+
+        ExpenseResponse response = expenseService.findById(expenseId, email);
+
+        assertNotNull(response);
+        verify(expenseRepository, times(1)).findByIdAndUserEmail(expenseId, email);
+    }
+
+    @Test
+    void findById_WhenExpenseDoesNotExist_ShouldThrowResourceNotFoundException() {
+        when(expenseRepository.findByIdAndUserEmail(expenseId, email)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.findById(expenseId, email));
+    }
+
+    @Test
+    void findAll_ShouldReturnExpenseListResponse() {
+        when(expenseRepository.findByUserEmail(email, pageable))
+                .thenReturn(new PageImpl<>(List.of(sampleExpense), pageable, 1));
+
+        ExpenseListResponse response = expenseService.findAll(email, pageable);
+
+        assertNotNull(response);
+        assertEquals(1, response.meta().totalCount());
+        assertEquals(1, response.data().size());
+        verify(expenseRepository, times(1)).findByUserEmail(email, pageable);
+    }
+
+    @Test
+    void delete_WhenExpenseExists_ShouldDeleteSuccessfully() {
+        when(expenseRepository.findByIdAndUserEmail(expenseId, email)).thenReturn(Optional.of(sampleExpense));
+
+        assertDoesNotThrow(() -> expenseService.delete(expenseId, email));
+        verify(expenseRepository, times(1)).delete(sampleExpense);
+    }
+
+    @Test
+    void delete_WhenExpenseDoesNotExist_ShouldThrowResourceNotFoundException() {
+        when(expenseRepository.findByIdAndUserEmail(expenseId, email)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.delete(expenseId, email));
+        verify(expenseRepository, never()).delete(any(Expense.class));
+    }
+
+    // ---------------------------------------------------------------------
+    // filterExpenses() — cobertura de la regla de exclusión mutua (bug fix)
+    // ---------------------------------------------------------------------
+
+    @Test
+    void filterExpenses_WhenRangeAndStartDateProvidedTogether_ShouldThrowInvalidFilterException() {
+        assertThrows(InvalidFilterException.class,
+                () -> expenseService.filterExpenses(email, "last_week", LocalDate.of(2026, 6, 1), null,null, pageable));
+
+        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any(), any());
+    }
+
+    @Test
+    void filterExpenses_WhenRangeAndEndDateProvidedTogether_ShouldThrowInvalidFilterException() {
+        assertThrows(InvalidFilterException.class,
+                () -> expenseService.filterExpenses(email, "last_month", null, LocalDate.of(2026, 7, 4),null, pageable));
+
+        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any(), any());
+    }
+
+    @Test
+    void filterExpenses_WhenRangeAndBothCustomDatesProvided_ShouldThrowInvalidFilterException() {
+        assertThrows(InvalidFilterException.class,
+                () -> expenseService.filterExpenses(email, "last_3_months",
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 4),null, pageable));
+
+        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any(), any());
+    }
+
+    @Test
+    void filterExpenses_WhenOnlyRangeProvided_ShouldQueryRepository() {
+        when(expenseRepository.findByUserEmailAndExpenseDateBetween(eq(email), any(), any(), eq(pageable)))
+            .thenReturn(new PageImpl<>(List.of(sampleExpense), pageable, 1));
+
+        ExpenseListResponse response = expenseService.filterExpenses(email, "last_week", null, null,null, pageable);
+
+        assertNotNull(response);
+        assertEquals(1, response.meta().totalCount());
+        assertEquals("last_week", response.meta().appliedFilters().get("range"));
+        verify(expenseRepository, times(1)).findByUserEmailAndExpenseDateBetween(eq(email), any(), any(), eq(pageable));
+    }
+
+    @Test
+    void filterExpenses_WhenOnlyCustomDatesProvided_ShouldQueryRepository() {
+        LocalDate start = LocalDate.of(2026, 6, 1);
+        LocalDate end = LocalDate.of(2026, 7, 4);
+        when(expenseRepository.findByUserEmailAndExpenseDateBetween(email, start, end, pageable))
+            .thenReturn(new PageImpl<>(List.of(sampleExpense), pageable, 1));
+
+        ExpenseListResponse response = expenseService.filterExpenses(email, null, start, end,null, pageable);
+
+        assertNotNull(response);
+        assertEquals("custom", response.meta().appliedFilters().get("range"));
+        verify(expenseRepository, times(1)).findByUserEmailAndExpenseDateBetween(email, start, end, pageable);
+    }
+
+    @Test
+    void filterExpenses_WhenNoFiltersProvided_ShouldThrowInvalidFilterException() {
+        assertThrows(InvalidFilterException.class,
+                () -> expenseService.filterExpenses(email, null, null, null,null, pageable));
+    }
+
+    @Test
+    void filterExpenses_WhenRangeIsUnknown_ShouldThrowInvalidFilterException() {
+        assertThrows(InvalidFilterException.class,
+                () -> expenseService.filterExpenses(email, "last_year", null, null,null, pageable));
+    }
+
+    @Test
+    void filterExpenses_WhenStartDateAfterEndDate_ShouldThrowInvalidFilterException() {
+        LocalDate start = LocalDate.of(2026, 7, 10);
+        LocalDate end = LocalDate.of(2026, 7, 1);
+
+        assertThrows(InvalidFilterException.class,
+            () -> expenseService.filterExpenses(email, null, start, end,null, pageable));
+
+        verify(expenseRepository, never()).findByUserEmailAndExpenseDateBetween(any(), any(), any(), any());
+    }
+}
+</file>
+
+<file path=".gitignore">
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### Secretos y configuración local (NO commitear) ###
+.env
+application-local.properties
+application-secrets.properties
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/controller/ExpenseController.java">
+package com.camss.honeymoney.controller;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.camss.honeymoney.dto.ExpenseListResponse;
+import com.camss.honeymoney.dto.ExpenseRequest;
+import com.camss.honeymoney.dto.ExpenseResponse;
+import com.camss.honeymoney.dto.ExpenseUpdateRequest;
+import com.camss.honeymoney.model.Category;
+import com.camss.honeymoney.service.ExpenseService;
+
+import jakarta.validation.Valid;
+
+import java.time.LocalDate;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@RestController
+@RequestMapping("/api/expenses")
+public class ExpenseController {
+    private final ExpenseService expenseService;
+
+    ExpenseController(ExpenseService expenseService) {
+        this.expenseService = expenseService;
+    }
+
+    @PostMapping
+    public ResponseEntity<ExpenseResponse> create(@Valid @RequestBody ExpenseRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        ExpenseResponse response = expenseService.create(request, userDetails.getUsername());
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ExpenseResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody ExpenseUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        ExpenseResponse response = expenseService.update(id, request, userDetails.getUsername());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ExpenseResponse> findById(@PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        ExpenseResponse response = expenseService.findById(id, userDetails.getUsername());
+        return ResponseEntity.ok(response);
+    }
+
+    // Unificado: Maneja la petición sin filtros y con filtros
+    @GetMapping
+    public ResponseEntity<ExpenseListResponse> getExpenses(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Category category,
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
+
+        // Si no se envían filtros, responde con la lista completa
+        if (range == null && startDate == null && endDate == null && category == null) {
+            return ResponseEntity.ok(expenseService.findAll(userDetails.getUsername(), pageable));
+        }
+
+        // Si se envían filtros, ejecuta la lógica de filtrado
+        ExpenseListResponse response = expenseService.filterExpenses(
+                userDetails.getUsername(), range, startDate, endDate, category, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        expenseService.delete(id, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/exception/GlobalExceptionHandler.java">
+package com.camss.honeymoney.exception;
+
+import java.time.Instant;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, WebRequest request) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicatedEmailException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicatedEmail(DuplicatedEmailException ex, WebRequest request) {
+        return build(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidFilterException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidFilter(InvalidFilterException ex, WebRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({ BadCredentialsException.class, AuthenticationException.class })
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(Exception ex, WebRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, "Credenciales inválidas", request);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException ex, WebRequest request) {
+        return build(HttpStatus.BAD_REQUEST, "Cuerpo de la petición inválido o mal formado", request);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, WebRequest request) {
+        List<ErrorResponse.FieldError> details = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new ErrorResponse.FieldError(fe.getField(), fe.getDefaultMessage())).toList();
+
+        ErrorResponse body = new ErrorResponse(Instant.now(), HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(), "Error de Validación",
+                request.getDescription(false).replace("uri=", ""),
+                details);
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    // Captura parámetros de query mal formateados (ej: startDate=2026/07/04 en vez de 2026-07-04)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, WebRequest request) {
+        String message = String.format(
+                "El parámetro '%s' tiene un formato inválido (se recibió '%s'). Formato esperado: AAAA-MM-DD.",
+                ex.getName(), ex.getValue());
+        return build(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler({ ExpiredJwtException.class, MalformedJwtException.class, SignatureException.class })
+    public ResponseEntity<ErrorResponse> handleJwtException(Exception ex, WebRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, "Token inválido o expirado", request);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest request) {
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado", request);
+    }
+
+    private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, WebRequest request) {
+        ErrorResponse body = new ErrorResponse(Instant.now(), status.value(), status.getReasonPhrase(), message,
+                request.getDescription(false).replace("uri=", ""));
+        return ResponseEntity.status(status).body(body);
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/service/ExpenseService.java">
+package com.camss.honeymoney.service;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.camss.honeymoney.dto.ExpenseListResponse;
+import com.camss.honeymoney.dto.ExpenseRequest;
+import com.camss.honeymoney.dto.ExpenseResponse;
+import com.camss.honeymoney.dto.ExpenseUpdateRequest;
+import com.camss.honeymoney.exception.InvalidFilterException;
+import com.camss.honeymoney.exception.ResourceNotFoundException;
+import com.camss.honeymoney.model.Category;
+import com.camss.honeymoney.model.Expense;
+import com.camss.honeymoney.model.User;
+import com.camss.honeymoney.repository.ExpenseRepository;
+import com.camss.honeymoney.repository.UserRepository;
+
+@Service
+public class ExpenseService {
+
+    private final ExpenseRepository expenseRepository;
+    private final UserRepository userRepository;
+
+    ExpenseService(ExpenseRepository expenseRepository, UserRepository userRepository) {
+        this.expenseRepository = expenseRepository;
+        this.userRepository = userRepository;
+    }
+
+    @Transactional
+    public ExpenseResponse create(ExpenseRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+
+        Expense expense = request.toEntity();
+        
+        // Optimización: Limpieza de descripción en un solo paso
+        if (expense.getDescription() != null) {
+            String trimmed = expense.getDescription().trim();
+            expense.setDescription(trimmed.isEmpty() ? null : trimmed);
+        }
+
+        expense.setCreatedAt(Instant.now());
+        expense.setUpdatedAt(Instant.now());
+        expense.setUser(user);
+
+        return new ExpenseResponse(expenseRepository.save(expense));
+    }
+
+    @Transactional
+    public ExpenseResponse update(Long id, ExpenseUpdateRequest request, String userEmail) {
+        Expense expense = expenseRepository.findByIdAndUserEmail(id, userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado o no autorizado"));
+
+        if (request.amount() != null) {
+            expense.setAmount(request.amount());
+        }
+        if (request.category() != null) {
+            expense.setCategory(request.category());
+        }
+        if (request.description() != null) {
+            String trimmed = request.description().trim();
+            expense.setDescription(trimmed.isEmpty() ? null : trimmed);
+        }
+        if (request.expenseDate() != null) {
+            expense.setExpenseDate(request.expenseDate());
+        }
+        
+        expense.setUpdatedAt(Instant.now());
+        return new ExpenseResponse(expenseRepository.save(expense));
+    }
+
+    @Transactional(readOnly = true)
+    public ExpenseResponse findById(Long id, String userEmail) {
+        return expenseRepository.findByIdAndUserEmail(id, userEmail)
+                .map(ExpenseResponse::new)
+                .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado o no autorizado"));
+    }
+
+    @Transactional(readOnly = true)
+    public ExpenseListResponse findAll(String userEmail, Pageable pageable) {
+        Page<Expense> expenses = expenseRepository.findByUserEmail(userEmail, pageable);
+        return buildExpenseListResponse(expenses, Map.of());
+    }
+
+    @Transactional
+    public void delete(Long id, String userEmail) {
+        Expense expense = expenseRepository.findByIdAndUserEmail(id, userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado o no autorizado"));
+        expenseRepository.delete(expense);
+    }
+
+    @Transactional(readOnly = true)
+    public ExpenseListResponse filterExpenses(String userEmail, String range, LocalDate startDate, LocalDate endDate, Category category, Pageable pageable) {
+        boolean hasRange = range != null && !range.isBlank();
+        boolean hasCustomDates = startDate != null || endDate != null;
+
+        if (hasRange && hasCustomDates) {
+            throw new InvalidFilterException("Los parámetros 'range' y 'startDate'/'endDate' son mutuamente excluyentes.");
+        }
+
+        LocalDate finalStart = startDate;
+        LocalDate finalEnd = endDate;
+
+        if (hasRange) {
+            finalEnd = LocalDate.now();
+            finalStart = switch (range) {
+                case "last_week" -> finalEnd.minusWeeks(1);
+                case "last_month" -> finalEnd.minusMonths(1);
+                case "last_3_months" -> finalEnd.minusMonths(3);
+                default -> throw new InvalidFilterException("Rango no válido: " + range);
+            };
+        } else {
+            // Validar que si se usa rango personalizado, ambas fechas existan
+            if ((startDate == null || endDate == null) && category == null) {
+                throw new InvalidFilterException("Debe proporcionar un rango válido, ambas fechas (inicio y fin) o una categoría.");
+            }
+            if (startDate != null && endDate == null) {
+                throw new InvalidFilterException("Falta la fecha de fin (endDate).");
+            }
+            if (startDate == null && endDate != null) {
+                throw new InvalidFilterException("Falta la fecha de inicio (startDate).");
+            }
+        }
+
+        // Validación segura de orden de fechas
+        if (finalStart != null && finalEnd != null && finalStart.isAfter(finalEnd)) {
+            throw new InvalidFilterException("La fecha de inicio no puede ser posterior a la fecha fin.");
+        }
+
+        // Consulta optimizada delegando lógica al repositorio
+        Page<Expense> expenses;
+        if (category != null && finalStart != null && finalEnd != null) {
+            expenses = expenseRepository.findByUserEmailAndCategoryAndExpenseDateBetween(userEmail, category, finalStart, finalEnd, pageable);
+        } else if (category != null) {
+            expenses = expenseRepository.findByUserEmailAndCategory(userEmail, category, pageable);
+        } else {
+            expenses = expenseRepository.findByUserEmailAndExpenseDateBetween(userEmail, finalStart, finalEnd, pageable);
+        }
+
+        Map<String, Object> metaData = Map.of(
+            "range", hasRange ? range : "custom",
+            "startDate", finalStart != null ? finalStart : "N/A",
+            "endDate", finalEnd != null ? finalEnd : "N/A",
+            "category", category != null ? category : "N/A"
+        );
+
+        return buildExpenseListResponse(expenses, metaData);
+    }
+
+    // Helper metod para evitar duplicación de código al construir respuestas paginadas
+    private ExpenseListResponse buildExpenseListResponse(Page<Expense> expenses, Map<String, Object> extraMeta) {
+        List<ExpenseResponse> data = expenses.stream().map(ExpenseResponse::new).toList();
+        ExpenseListResponse.Meta meta = new ExpenseListResponse.Meta(
+            expenses.getTotalElements(), 
+            expenses.getTotalPages(), 
+            expenses.getNumber(), 
+            expenses.getSize(), 
+            expenses.isLast(), 
+            extraMeta
+        );
+        return new ExpenseListResponse(data, meta);
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/config/SecurityConfig.java">
+package com.camss.honeymoney.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.camss.honeymoney.security.JwtAuthenticationFilter;
+import com.camss.honeymoney.security.UserDetailsServiceImpl;
+
+import jakarta.servlet.http.HttpServletResponse;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    private final UserDetailsServiceImpl userDetailsServiceImpl;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    SecurityConfig(UserDetailsServiceImpl userDetailsServiceImpl, JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.userDetailsServiceImpl = userDetailsServiceImpl;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
+    @Bean 
+    public PasswordEncoder passwordEncoder(){return new BCryptPasswordEncoder();}
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsServiceImpl);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception{
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint(){
+        return (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Token ausente, inválido, malformado o expirado\"}");
+        };
+    }
+
+    @Bean 
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/swagger-ui.html").permitAll()
+                .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/categories").permitAll()
+            .anyRequest().authenticated())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint()))
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        
+            return http.build();
+    }
+}
+</file>
+
+<file path="src/main/java/com/camss/honeymoney/repository/ExpenseRepository.java">
+package com.camss.honeymoney.repository;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.camss.honeymoney.model.Category;
+import com.camss.honeymoney.model.Expense;
+
+public interface ExpenseRepository extends JpaRepository<Expense, Long>{
+    Page<Expense> findByUserEmail(String email, Pageable pageable);
+    Page<Expense> findByUserEmailAndExpenseDateBetween(String email, LocalDate starDate, LocalDate endDate, Pageable pageable);
+    Page<Expense> findByUserEmailAndCategory(String email, Category category, Pageable pageable);
+    Page<Expense> findByUserEmailAndCategoryAndExpenseDateBetween(
+    String email, Category category, LocalDate start, LocalDate end, Pageable pageable);
+    Optional<Expense> findByIdAndUserEmail(Long id, String email);
+}
+</file>
+
+<file path="src/main/resources/application.properties">
+spring.application.name=honeymoney
+
+# Base de datos en memoria
+#spring.datasource.url=jdbc:h2:mem:honeymoney
+#spring.datasource.driver-class-name=org.h2.Driver
+#spring.datasource.username=sa
+#spring.datasource.password=
+
+# Base de datos postgres
+spring.datasource.url=jdbc:postgresql://localhost:5432/honeymoney
+spring.datasource.username=postgres
+spring.datasource.password=${PASS_DB}
+
+# JPA / Hibernate
+# dialecto (Le dice a Hibernate cómo hablar Postgres)
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# Consola H2
+#spring.h2.console.enabled=true
+#spring.h2.console.path=/h2-console
+
+# JWT
+# El valor por defecto SOLO aplica para desarrollo local. En cualquier entorno real
+# (staging/producción) se debe definir la variable de entorno JWT_SECRET con un valor
+# propio (ver .env.example). Nunca commitear un secreto real en este archivo.
+jwt.secret=${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWtleS1kby1ub3QtdXNlLWluLXByb2R1Y3Rpb24tSG9uZXlNb25leS0yMDI2}
+jwt.expiration=${JWT_EXPIRATION:3600000}
+
+# SpringDoc
+springdoc.writer-with-default-pretty-printer=true
+</file>
+
+<file path="pom.xml">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.camss</groupId>
+    <artifactId>honeymoney</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>honeymoney</name>
+    <description>honeymoney</description>
+
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.11.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+</file>
+
+</files>
