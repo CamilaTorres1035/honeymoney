@@ -490,7 +490,7 @@ La aplicación requiere las siguientes variables de entorno:
 
 | Variable | Descripción | Obligatoria |
 | --- | --- | --- |
-| `PASS_DB` | Contraseña de la base de datos PostgreSQL | Sí |
+| `PASS_SP_DB` | Contraseña configurada en tu proyecto de Supabase | Sí |
 | `JWT_SECRET` | Clave usada para firmar los JWT (HS256, base64 ≥ 256 bits) | Recomendada (tiene valor por defecto solo para desarrollo local) |
 | `JWT_EXPIRATION` | Tiempo de expiración del token en milisegundos | No (default: `3600000`, 1 hora) |
 
@@ -537,8 +537,9 @@ La API expone documentación interactiva generada con springdoc-openapi, accesib
 - [x]  Añadir endpoint de categorías
 - [x]  Añadir filtro por categoría
 - [x]  Actualizar contratos y documentación
+- [x] Migración a Supabase (PostgreSQL Cloud): Configuración de variables de entorno para conexión remota y validación de certificados SSL para la conexión a la nube.
 
-> Al migrar a PostgreSQL se añade una nueva variable de entorno `PASS_DB` que debe ser configurada en el IDE (ver sección "Configuración de entorno").
+> Almacenamiento mediante PostgreSQL alojado en Supabase. Requiere la configuración de conexión mediante variables de entorno estándar de Spring Boot (ver sección "Configuración de entorno").
 
 > El endpoint para listar categorías está disponible sin token.
 
