@@ -1,17 +1,15 @@
 <div align="center">
 
 # HoneyMoney
-
 ### Expense Tracker API
 
-API REST para la gestión de gastos personales con autenticación basada en JWT.
-Diseñada con foco en seguridad, claridad de contratos y buenas prácticas REST.
+API REST para la gestión de gastos personales con autenticación basada en JWT. Diseñada con foco en seguridad, claridad de contratos y buenas prácticas REST.
 
 ![Java](https://img.shields.io/badge/Java_17-ED8B00?style=plastic&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=plastic&logo=springboot&logoColor=white)
 ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=plastic&logo=springsecurity&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=plastic&logo=jsonwebtokens&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=plastic&logo=postgresql&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=plastic&logo=supabase&logoColor=white)
 ![Maven](https://img.shields.io/badge/Maven-C71A36?style=plastic&logo=apachemaven&logoColor=white)
 
 </div>
@@ -29,7 +27,7 @@ Este proyecto fue construido para aplicar conceptos clave de backend:
 | Manejo de errores | Formato de error unificado |
 | Modelado de dominio | Entidades y relaciones claras |
 | Validación de datos | Reglas de negocio en capa de servicio |
-| Persistencia | Migración de H2 in-memory a PostgreSQL |
+| Persistencia | Cambio de base de datos local a una instancia en la nube con Supabase |
 
 ---
 
@@ -39,7 +37,7 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado:
 
 - JDK 17
 - Maven 3.x
-- PostgreSQL (instancia local o remota, con una base de datos `honeymoney` creada)
+- Una cuenta activa en Supabase con un proyecto creado
 
 ---
 
@@ -50,7 +48,7 @@ git clone https://github.com/CamilaTorres1035/honeymoney
 cd honeymoney
 ```
 
-Configura las variables de entorno necesarias (ver [Variables de entorno](#variables-de-entorno)), como mínimo `PASS_DB`. Puedes copiar `.env.example` como referencia.
+Configura las variables de entorno necesarias (ver [Variables de entorno](#variables-de-entorno)), asegurándote de definir `PASS_SP_DB` con la contraseña de tu base de datos en Supabase. Puedes copiar `.env.example` como referencia.
 
 ```bash
 mvn spring-boot:run
@@ -74,7 +72,7 @@ http://localhost:8080/swagger-ui/index.html
 
 | Variable | Descripción | Obligatoria |
 |---|---|---|
-| `PASS_DB` | Contraseña de la base de datos PostgreSQL | Sí |
+| `PASS_SP_DB` | Contraseña de la base de datos PostgreSQL de Supabase | Sí |
 | `JWT_SECRET` | Clave para firmar los JWT (HS256, base64 ≥ 256 bits) | Recomendada (tiene default solo para desarrollo local) |
 | `JWT_EXPIRATION` | Expiración del token en milisegundos (default: `3600000` = 1h) | No |
 
@@ -120,7 +118,7 @@ Authorization: Bearer <token>
 | Framework | Spring Boot |
 | Seguridad | Spring Security |
 | Autenticación | JWT |
-| Base de datos | PostgreSQL |
+| Base de datos | Supabase (PostgreSQL Cloud) |
 | Documentación API | springdoc-openapi (Swagger UI) |
 | Build tool | Maven |
 
@@ -180,7 +178,7 @@ Endpoint público (no requiere token). Devuelve el catálogo fijo de categorías
 
 - Todos los endpoints de gastos requieren autenticación
 - No se expone información sobre recursos de otros usuarios
-- Base de datos PostgreSQL persistente
+- Base de datos en la nube autogestionada (Supabase)
 - Formato de fechas: `YYYY-MM-DD`
 
 ---
@@ -203,7 +201,7 @@ mvn test
 
 ## Roadmap
 
-- [x] Migrar a base de datos persistente (PostgreSQL)
+- [x] Migrar a base de datos persistente en la nube (Supabase)
 - [x] Paginación en listados
 - [x] Filtro por categoría
 - [x] Endpoint de categorías
@@ -220,6 +218,7 @@ mvn test
 - Validación de inputs
 - Diseño de APIs centradas en el usuario
 - Migración de un almacenamiento in-memory a una base de datos persistente
+- Conexión y persistencia con un proveedor de bases de datos Cloud (Supabase)
 
 ---
 
