@@ -2,9 +2,11 @@ package com.camss.honeymoney.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import java.time.Instant;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -121,5 +123,36 @@ class AuthServiceTest {
         verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(userRepository, times(1)).findByEmail(loginRequest.email());
         verify(jwtService, times(1)).generateToken(any(UserDetails.class));
+    }
+
+    @Test
+    void authenticate_WhenUserDoesNotExist_ShouldThrowException(){
+        // Arrenge
+        LoginRequest loginRequest = new LoginRequest("juan@example.com", "password123");
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(null);
+        when(userRepository.findByEmail(loginRequest.email())).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(NoSuchElementException.class, () -> authService.authenticate(loginRequest));
+
+        // Verify
+        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(userRepository, times(1)).findByEmail(loginRequest.email());
+        verify(jwtService, never()).generateToken(any());
+    }
+
+    @Test
+    void authenticate_WhenCredentialsAreNotValid_ShouldThrowBadCredentialsException(){
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest("juan@example.com", "password123");
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenThrow(new org.springframework.security.authentication.BadCredentialsException("Bad Credentials"));
+
+        assertThrows(org.springframework.security.authentication.BadCredentialsException.class, () -> authService.authenticate(loginRequest));
+
+        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(userRepository, never()).findByEmail(anyString());
+        verify(jwtService, never()).generateToken(any());
     }
 }
