@@ -38,4 +38,27 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
     
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refreshToken(
+            @org.springframework.web.bind.annotation.CookieValue(name = "refreshToken", required = false) String requestRefreshToken) {
+        
+        if (requestRefreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        LoginResponse response = authService.refreshToken(requestRefreshToken);
+
+        // Enviar el nuevo refresh token como una Cookie HttpOnly
+        org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("refreshToken", response.refreshToken())
+                .httpOnly(true)
+                .secure(true) // Cambiar a false si estás probando en local sin HTTPS
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60)
+                .sameSite("Strict")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response);
+    }
 }

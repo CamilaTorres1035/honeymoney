@@ -1,7 +1,8 @@
 package com.camss.honeymoney.dto;
 
 public record LoginResponse(
-    String token,
+    String accessToken,
+    String refreshToken,
     UserSummary user
 ) {
     public record UserSummary(

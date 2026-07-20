@@ -13,6 +13,7 @@ import com.camss.honeymoney.dto.LoginResponse;
 import com.camss.honeymoney.dto.RegisterRequest;
 import com.camss.honeymoney.dto.RegisterResponse;
 import com.camss.honeymoney.exception.DuplicatedEmailException;
+import com.camss.honeymoney.model.RefreshToken;
 import com.camss.honeymoney.model.User;
 import com.camss.honeymoney.repository.UserRepository;
 import com.camss.honeymoney.security.JwtService;
@@ -54,8 +55,31 @@ public class AuthService {
 
         var principal = new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), Collections.emptyList());
 
-        String token = jwtService.generateToken(principal);
+        String accessToken = jwtService.generateToken(principal);
+        RefreshToken refreshToken = jwtService.createRefreshToken(user.getEmail());
 
-        return new LoginResponse(token, new LoginResponse.UserSummary(user.getId(), user.getName(), user.getEmail()));
+        return new LoginResponse(accessToken, refreshToken.getToken(), new LoginResponse.UserSummary(user.getId(), user.getName(), user.getEmail()));
+    }
+
+    public LoginResponse refreshToken(String requestRefreshToken) {
+        RefreshToken refreshToken = jwtService.findByToken(requestRefreshToken)
+                .map(jwtService::verifyExpiration)
+                .orElseThrow(() -> new RuntimeException("Refresh token no encontrado o expirado."));
+
+        User user = refreshToken.getUser();
+
+        // Rotación: Eliminar el refresh token viejo y generar uno nuevo
+        jwtService.deleteRefreshToken(refreshToken);
+        RefreshToken newRefreshToken = jwtService.createRefreshToken(user.getEmail());
+
+        // Generar un nuevo Access Token
+        var principal = new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), Collections.emptyList());
+        String newAccessToken = jwtService.generateToken(principal);
+
+        return new LoginResponse(
+            newAccessToken, 
+            newRefreshToken.getToken(), 
+            new LoginResponse.UserSummary(user.getId(), user.getName(), user.getEmail())
+        );
     }
 }
