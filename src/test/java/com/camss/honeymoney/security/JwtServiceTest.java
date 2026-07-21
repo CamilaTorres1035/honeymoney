@@ -14,15 +14,24 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.camss.honeymoney.repository.RefreshTokenRepository;
+
 import io.jsonwebtoken.ExpiredJwtException;
 
 class JwtServiceTest {
-    private JwtService jwtService;
     private UserDetails mockUser;
+
+    @Mock
+    RefreshTokenRepository refreshTokenRepository;
+
+    @InjectMocks
+    JwtService jwtService;
 
     private final String base64Secret = Base64.getEncoder().encodeToString("3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b".getBytes());
 
@@ -30,8 +39,6 @@ class JwtServiceTest {
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
-
         // Inyectamos manualmente los valores de @Value
         ReflectionTestUtils.setField(jwtService, "secretKey", base64Secret);
         ReflectionTestUtils.setField(jwtService, "jwtExpiration", expirationTime);

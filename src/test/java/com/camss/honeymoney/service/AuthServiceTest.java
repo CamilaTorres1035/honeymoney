@@ -115,7 +115,7 @@ class AuthServiceTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(mockToken, response.token());
+        assertEquals(mockToken, response.accessToken());
         assertEquals(userMock.getId(), response.user().id());
         assertEquals(userMock.getName(), response.user().name());
         assertEquals(userMock.getEmail(), response.user().email());

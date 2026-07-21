@@ -115,7 +115,7 @@ class AuthControllerTest {
 
     @Test
     void login_WithValidCredentials_ShouldReturn200AndToken() throws Exception {
-        LoginResponse response = new LoginResponse("fake.jwt.token",
+        LoginResponse response = new LoginResponse("fake.jwt.token", "fake.jwt.refresh",
                 new LoginResponse.UserSummary(1L, "Carlos Mendoza", "carlos@example.com"));
         when(authService.authenticate(any())).thenReturn(response);
 

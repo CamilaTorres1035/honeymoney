@@ -35,7 +35,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.authenticate(request);
-        return ResponseEntity.ok(response);
+
+        // Crear la cookie para el refresh token
+        org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("refreshToken", response.refreshToken())
+                .httpOnly(true)
+                .secure(false) // 'true' solo si se usa HTTPS en producción. En local (http://localhost) dejar en 'false' o fallará.
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60)
+                .sameSite("Strict")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response);
     }
     
     @PostMapping("/refresh")
