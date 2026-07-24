@@ -1,19 +1,18 @@
-# HoneyMoney – Expense Tracker API (V2)
+# HoneyMoney – Expense Tracker API (V2.1)
 
 Creado: 28 de junio de 2026 10:25
-Actualizado: 11 de julio de 2026
+Actualizado: 23 de julio de 2026
 Etiquetas: APIs, Spring Boot
-Estado: Fase 2 (en curso)
 
 ## Descripción
 
-**HoneyMoney** es una API REST desarrollada con Spring Boot que permite a los usuarios gestionar sus gastos personales de manera segura y eficiente. La aplicación utiliza **PostgreSQL** como base de datos persistente (migrada desde H2 in-memory, usada originalmente en la Fase 1), con autenticación basada en JWT para proteger los endpoints.
+**HoneyMoney** es una API REST desarrollada con Spring Boot que permite a los usuarios gestionar sus gastos personales de manera segura y eficiente. La aplicación utiliza **PostgreSQL** como base de datos persistente (migrada desde H2 in-memory, usada originalmente en la Fase 1), un sistema de autenticación basado en JWT + Refresh Tokens, permitiendo sesiones seguras y renovables.
 
 ---
 
 ## Objetivo
 
-Aplicar conceptos aprendidos para construir una API que permita a los usuarios registrar, consultar, actualizar y eliminar sus gastos, con autenticación basada en JWT para proteger los endpoints.
+Aplicar conceptos de backend para construir una API que permita a los usuarios gestionar sus gastos personales, implementando un sistema de autenticación robusto basado en access tokens de corta duración y refresh tokens para renovación de sesión.
 
 ---
 
@@ -22,9 +21,12 @@ Aplicar conceptos aprendidos para construir una API que permita a los usuarios r
 ### Autenticación y usuarios
 
 - Registro de usuarios.
-- Login con emisión de JWT.
-- Validación de JWT para proteger los endpoints (mediante un middleware de seguridad en cada petición protegida).
-- Identificación del usuario autenticado en cada petición a un endpoint protegido, a partir del JWT.
+- Login con emisión de:
+  - Access Token (JWT)
+  - Refresh Token
+- Renovación de sesión mediante refresh token.
+- Validación de JWT para proteger los endpoints.
+- Identificación del usuario autenticado en cada petición.
 
 ---
 
@@ -86,13 +88,20 @@ Las categorías se exponen a través de `GET /api/categories` y se usan además 
 
 ## Restricciones técnicas
 
-- JWT obligatorio para todos los endpoints protegidos, excepto `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/categories` y la documentación de Swagger/OpenAPI (`/swagger-ui/**`, `/v3/api-docs/**`).
-- Almacenamiento mediante **PostgreSQL**. Requiere la variable de entorno `PASS_DB` con la contraseña de la base de datos.
+- JWT obligatorio para todos los endpoints protegidos, excepto:
+  - `POST /api/auth/register`
+  - `POST /api/auth/login`
+  - `POST /api/auth/refresh`
+  - `GET /api/categories`
+  - la documentación de Swagger/OpenAPI (`/swagger-ui/**`, `/v3/api-docs/**`).
+- Los access tokens tienen expiración corta (configurable).
+- Los refresh tokens permiten renovar sesión sin reautenticación.
+- El logout invalida el refresh token en servidor.
+- Almacenamiento mediante **PostgreSQL (Supabase)**. Requiere la variable de entorno `PASS_DB` con la contraseña de la base de datos.
 - Formato de fecha estándar para toda la API: `AAAA-MM-DD` (ISO 8601, ej. `2026-07-04`).
-- Todo listado y filtrado de gastos (`GET /api/expenses` y sus variantes) debe estar acotado automáticamente al usuario autenticado identificado por el JWT.
+- Aislamiento de datos por usuario autenticado.
 - Paginación disponible en `GET /api/expenses` mediante los parámetros estándar de Spring Data (`page`, `size`). Por defecto: `page=0`, `size=10`.
 - Filtro por categoría disponible mediante el parámetro `category`, combinable con `range` o con `startDate`/`endDate`.
-- Documentación interactiva vía Swagger UI (`/swagger-ui/index.html`) generada con springdoc-openapi.
 
 ---
 
@@ -104,10 +113,12 @@ Las categorías se exponen a través de `GET /api/categories` y se usan además 
 
 ## Diseño de Endpoints
 
-| Método | Endpoint | Función |
-| --- | --- | --- |
-| POST | /api/auth/register | Registro de usuarios |
-| POST | /api/auth/login | Login de usuarios |
+| Método | Endpoint           | Función                                |
+| ------ | ------------------ | -------------------------------------- |
+| POST   | /api/auth/register | Registro de usuarios                   |
+| POST   | /api/auth/login    | Login (retorna access + refresh token) |
+| POST   | /api/auth/refresh  | Obtener nuevo access token             |
+| POST   | /api/auth/logout   | Invalidar sesión                       |
 | POST | /api/expenses | Crear gasto |
 | GET | /api/expenses/{id} | Obtener gasto especifico |
 | GET | /api/expenses | Listar gastos del usuario autenticado (paginado) |
@@ -165,7 +176,8 @@ Las categorías se exponen a través de `GET /api/categories` y se usan además 
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "accesToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "...",
   "user": {
     "id": 1,
     "name": "Carlos Mendoza",
@@ -544,3 +556,10 @@ La API expone documentación interactiva generada con springdoc-openapi, accesib
 > El endpoint para listar categorías está disponible sin token.
 
 > El filtro por categoría se puede combinar con el filtro por fecha, tanto con un rango predefinido como con un rango personalizado.
+
+## Consideraciones de seguridad
+
+- Access tokens de corta duración reducen exposición ante filtraciones
+- Refresh tokens almacenados permiten control de sesiones activas
+- Logout invalida tokens en servidor (no solo en cliente)
+- Cada request protegido valida autenticidad y pertenencia del recurso al usuario

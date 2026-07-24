@@ -1,7 +1,8 @@
 <div align="center">
 
 # HoneyMoney
-### Expense Tracker API
+
+## Expense Tracker API
 
 API REST para la gestión de gastos personales con autenticación basada en JWT. Diseñada con foco en seguridad, claridad de contratos y buenas prácticas REST.
 
@@ -82,24 +83,32 @@ http://localhost:8080/swagger-ui/index.html
 
 ## Autenticación
 
-La API utiliza **JWT (JSON Web Tokens)** para proteger sus rutas.
+La API utiliza **JWT (JSON Web Tokens)** junto con Refresh Tokens para manejar la autenticación de forma segura y escalable.
 
 ### Flujo de autenticación
 
 1. Registrar usuario en `POST /api/auth/register`
 2. Iniciar sesión en `POST /api/auth/login`
-3. Usar el token recibido en cada request protegido:
+    - Se retorna:
+        - `accessToken` (JWT de corta duración)
+        - `refreshToken` (para renovar sesión)
+3. Usar el access token recibido en cada request protegido:
 
-```
+```bash
 Authorization: Bearer <token>
 ```
+
+4. Cuando el token expira, obtener uno nuevo en `POST /api/auth/refresh`
+5. Cerrar sesión invalidando el refresh token en `POST /api/auth/`
 
 ---
 
 ## Features
 
 - Registro y login de usuarios
-- Autenticación con JWT
+- Autenticación con JWT (access token)
+- Refresh tokens para sesiones persistentes
+- Invalidación de sesión (logout seguro)
 - CRUD completo de gastos
 - Filtros por fecha (última semana, mes, últimos 3 meses, rango personalizado)
 - Filtro por categoría, combinable con los filtros de fecha
@@ -128,10 +137,12 @@ Authorization: Bearer <token>
 
 ### Auth
 
-| Método | Endpoint |
-|---|---|
-| `POST` | `/api/auth/register` |
-| `POST` | `/api/auth/login` |
+| Método | Endpoint             | Descripción                                     |
+| ------ | -------------------- | ----------------------------------------------- |
+| POST   | `/api/auth/register` | Registrar nuevo usuario                         |
+| POST   | `/api/auth/login`    | Iniciar sesión (retorna access + refresh token) |
+| POST   | `/api/auth/refresh`  | Obtener nuevo access token usando refresh token |
+| POST   | `/api/auth/logout`   | Invalidar sesión (revoca refresh token)         |
 
 ### Expenses
 
@@ -181,6 +192,13 @@ Endpoint público (no requiere token). Devuelve el catálogo fijo de categorías
 - Base de datos en la nube autogestionada (Supabase)
 - Formato de fechas: `YYYY-MM-DD`
 
+### Seguridad
+
+- Los access tokens tienen corta duración para minimizar riesgos
+- Los refresh tokens permiten mantener sesiones sin exponer credenciales
+- Logout invalida el refresh token evitando reutilización
+- Endpoints protegidos requieren autenticación vía Bearer Token
+
 ---
 
 ## Documentación completa
@@ -205,7 +223,7 @@ mvn test
 - [x] Paginación en listados
 - [x] Filtro por categoría
 - [x] Endpoint de categorías
-- [ ] Refresh tokens (mejorar expiración de JWT)
+- [x] Refresh tokens (mejorar expiración de JWT)
 - [ ] Dockerización
 - [ ] Deploy
 
