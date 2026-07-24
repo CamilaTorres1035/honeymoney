@@ -82,4 +82,10 @@ public class AuthService {
             new LoginResponse.UserSummary(user.getId(), user.getName(), user.getEmail())
         );
     }
+
+    public void logout(String requestRefreshToken){
+        if (requestRefreshToken!= null) {
+            jwtService.findByToken(requestRefreshToken).ifPresent(jwtService::deleteRefreshToken);
+        }
+    }
 }

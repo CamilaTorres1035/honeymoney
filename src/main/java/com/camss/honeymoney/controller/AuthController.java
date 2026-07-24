@@ -73,4 +73,20 @@ public class AuthController {
                 .header(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(response);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@org.springframework.web.bind.annotation.CookieValue(name = "refreshToken", required = false) String requestRefreshToken) {
+            authService.logout(requestRefreshToken);
+
+            org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false) // true en producción con HTTPS
+                .path("/")
+                .maxAge(0) // Expira inmediatamente
+                .sameSite("Strict")
+                .build();
+            
+            return ResponseEntity.ok().header(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString()).build();
+    }
+    
 }
